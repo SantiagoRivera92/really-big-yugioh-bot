@@ -49,31 +49,6 @@ class Config:
 			json.dump(config, conf, indent=4)
 
 	def addSupportedFormat(self, formatName, lflistFile, serverId):
-
-		config = self.getConfigForServer(serverId)
-		
-		supportedFormats = config.get(supportedFormatsKey)
-
-		if formatName in supportedFormats:
-			result = OperationResult(False, "Format %s already exists" % formatName)
-		else:
-			result = self.banlistGenerator.writeBanlist(formatName, lflistFile, serverId)
-			if result.wasSuccessful():
-
-				supportedFormats.append(formatName)
-				banlistFiles = config.get(banlistFilesKey)
-				newBanlistFile = {}
-				newBanlistFile[nameKey] = formatName
-				newBanlistFile[filenameKey] = "./lflist/%s.lflist.conf"%formatName
-				banlistFiles.append(newBanlistFile)
-
-
-				config[banlistFilesKey] = banlistFiles
-				config[supportedFormatsKey] = supportedFormats
-				self.saveConfigForServer(serverId)
-		return result
-
-	def addSupportedFormat(self, formatName, lflistFile, serverId):
 		config = self.getConfigForServer(serverId)
 		supportedFormats = config.get(supportedFormatsKey)
 		
@@ -87,7 +62,7 @@ class Config:
 				banlistFiles = config.get(banlistFilesKey)
 				newBanlistFile = {}
 				newBanlistFile[nameKey] = formatName
-				newBanlistFile[filenameKey] = "./lflist/%s.lflist.conf"%formatName
+				newBanlistFile[filenameKey] = "./lflist/%d/%s.lflist.conf"%(serverId,formatName)
 				banlistFiles.append(newBanlistFile)
 
 				config[banlistFilesKey] = banlistFiles
@@ -126,11 +101,11 @@ class Config:
 
 	def isChannelEnabled(self, channelName, serverId):
 		if channelName == groupChannelKey or channelName == threadChannelKey:
-			return False
+			return OperationResult(False, "This bot doesn't support groups or threads")
 		for disabledChannel in self.getDisabledChannels(serverId):
 			if disabledChannel == channelName:
-				return False
-		return True
+				return OperationResult(False, "This channel is disabled")
+		return OperationResult(True, "")
 
 	def getForcedFormat(self, channelName, serverId):
 

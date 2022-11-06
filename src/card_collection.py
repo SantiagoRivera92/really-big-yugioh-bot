@@ -39,6 +39,15 @@ class CardCollection:
 				return card
 		return None
 
+	def getCardsFromPartialCardName(self, cardName):
+		self.refreshCards()
+		partialMatches = []
+		for card in self.cards:
+			if cardName.lower() in card.get('name').lower():
+				partialMatches.append(card.get('name'))
+		return partialMatches
+
+
 	def getCardNameFromId(self, cardId):
 		self.refreshCards()
 		cardIdAsInt = int(cardId)

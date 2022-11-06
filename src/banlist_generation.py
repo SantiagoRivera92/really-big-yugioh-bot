@@ -7,17 +7,13 @@ class BanlistGenerator:
 		self.cardCollection = cardCollection
 
 	def createFolderForServer(self, serverId):
-		folderName = "./lflist/%d"
+		folderName = "./lflist/%d" % serverId
 		if not os.path.exists(folderName):
 			os.makedirs(folderName)
 
 	def writeBanlist(self, formatName, lflistFile, serverId):
 		self.createFolderForServer(serverId)
-		filename = "./lflist/%d/%s.lflist.conf" % formatName
-		while "\n\n" in lflistFile:
-			lflistFile = lflistFile.replace("\n\n", "\n")
-		print(lflistFile, flush=True)
+		filename = "./lflist/%d/%s.lflist.conf" % (serverId,formatName)
 		with open(filename, 'w', encoding="utf-8") as banlist:
 			banlist.write(lflistFile)
-
 		return OperationResult(True, "")

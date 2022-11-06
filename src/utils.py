@@ -29,7 +29,8 @@ def getStatusInBanlist(cardId, banlist):
 			return int(line)
 	return -1
 
-def getChannelName(channel):
+
+def getChannelName(channel:discord.channel):
 	if isinstance(channel, discord.channel.DMChannel):
 		return dmChannelKey
 	elif isinstance(channel, discord.channel.GroupChannel):

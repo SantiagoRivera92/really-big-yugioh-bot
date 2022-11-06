@@ -2,8 +2,8 @@ import discord
 
 class Dropdown(discord.ui.Select):
 
-	def __init__(self):
-		super().__init__(placeholder='Choose a format', min_values=1, max_values=1)
+	def __init__(self, placeholder):
+		super().__init__(placeholder=placeholder, min_values=1, max_values=1)
 
 	def setup(self, list, interaction, callbackFunc, params):
 		for item in list:
@@ -19,7 +19,12 @@ class Dropdown(discord.ui.Select):
 
 class PaginationView(discord.ui.View):
 
-	def setup(self, optionList, interaction, callback, params):
-		self.dropdown = Dropdown()
+	def __init__(self, placeholder):
+		super().__init__()
+		self.placeholder = placeholder
+
+	def setup(self,optionList, interaction, callback, params):
+		self.dropdown = Dropdown(self.placeholder)
 		self.dropdown.setup(optionList, interaction, callback, params)
+		self.clear_items()
 		self.add_item(self.dropdown)
