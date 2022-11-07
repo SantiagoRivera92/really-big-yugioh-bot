@@ -5,7 +5,7 @@ from discord import File
 from src.deck_validation import DeckValidator
 from src.banlist_validation import BanlistValidator
 from src.card_embeds import cardToEmbed
-from src.utils import MyClient, OperationResult, getChannelName
+from src.utils import MyClient, OperationResult, getChannelName, isValidFilename
 from src.views import PaginationView
 from src.config import Config
 from src.server_config import ServerConfig
@@ -107,19 +107,19 @@ class PartialCardnameCallback:
 
 class FormatForPartialCardnameCallback:
 
-	def __init__(self, serverId, interaction):
+	def __init__(self, serverId, interaction:discord.Interaction):
 		self.serverId = serverId
 		self.interaction = interaction
 	
 	def setMessage(self, message:discord.WebhookMessage):
 		self.message = message
 
-	async def executeCallback(self, formatName, partialCardName):
-		cards = cardCollection.getCardsFromPartialCardName(partialCardName)
+	async def executeCallback(self, formatName, cards):
 		callback = PartialCardnameCallback(self.serverId)
 		pagination = PaginationView('Select a card')
 		pagination.setup(cards, self.interaction, callback, formatName)
-		message = await self.message.edit("Please choose a format to validate your deck", view=pagination, wait=True)
+		await self.message.delete()
+		message = await self.interaction.followup.send(content="Multiple results available. Please pick one.", view=pagination)
 		callback.setMessage(message)
 
 
@@ -131,7 +131,7 @@ async def on_ready():
 	pass
 
 
-async def canCommandExecute(interaction:discord.Interaction, adminOnly):
+def canCommandExecute(interaction:discord.Interaction, adminOnly):
 	serverId = interaction.guild_id
 	result = serverConfig.checkServerEnabled(serverId)
 	if not result.wasSuccessful():
@@ -150,33 +150,61 @@ async def canCommandExecute(interaction:discord.Interaction, adminOnly):
 				return OperationResult(False, "This command requires admin privileges")
 	return OperationResult(True, "")
 
-
 @bot.tree.command(name="card", description='Displays card text for any given card name')
 async def card(interaction: discord.Interaction, cardname: str):
 
 	"""Displays card text for any given card name"""
 	serverId = interaction.guild_id
 
-	result = await canCommandExecute(interaction, False)
+	result = canCommandExecute(interaction, False)
 
 	if result.wasSuccessful():
 		# Channel is enabled. We tell the interaction to wait for us until we find the card text
 		await interaction.response.defer()
 		channelName = getChannelName(interaction.channel)
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			pass
 		forcedFormat = config.getForcedFormat(channelName, serverId)
 		card = cardCollection.getCardFromCardName(cardname)
 		if card == None:
 			cards = cardCollection.getCardsFromPartialCardName(cardname)
-			if len(cards) <= 20 and len(cards) > 0:
-				pagination = PaginationView('Select a card')
-				callback = PartialCardnameCallback(serverId)
-				pagination.setup(cards, interaction, callback, forcedFormat)
-				message = await interaction.followup.send("Multiple results available. Please pick one.", view=pagination, wait=True)
-				callback.setMessage(message)
-			elif len(cards) == 0:
+			if len(cards) == 0:
 				await interaction.followup.send("There are no cards with %s in their name"%cardname)
+			elif len(cards) == 1:
+				cardname = cards[0]
+				card = cardCollection.getCardFromCardName(cardname)
+				if forcedFormat != None:
+					banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
+					embed = cardToEmbed(card, banlistFile, forcedFormat, bot)
+					await interaction.followup.send(embed=embed)
+				else:
+					formats = config.getSupportedFormats(serverId)
+					pagination = PaginationView("Select a format")
+					callback = FormatForCardLegalityCallback(serverId)
+					pagination.setup(config.getSupportedFormats(serverId), interaction, callback, card)
+					message = await interaction.followup.send("Please choose a format to display banlist status", view=pagination, wait=True)
+					callback.setMessage(message)
+			elif forcedFormat != None:
+				if len(cards) <= 20:
+					pagination = PaginationView('Select a card')
+					callback = PartialCardnameCallback(serverId)
+					pagination.setup(cards, interaction, callback, forcedFormat)
+					message = await interaction.followup.send("Multiple results available. Please pick one.", view=pagination, wait=True)
+					callback.setMessage(message)
+				else:
+					await interaction.followup.send("More than 20 cards contain %s. Please be more specific."%cardname)
 			else:
-				await interaction.followup.send("More than 20 cards contain %s. Please be more specific."%cardname)
+				if len(cards) <= 20:
+					pagination = PaginationView('Select a format')
+					callback = FormatForPartialCardnameCallback(serverId, interaction)
+					pagination.setup(config.getSupportedFormats(serverId), interaction, callback, cards)
+					message = await interaction.followup.send("Select a format", view=pagination, wait=True)
+					callback.setMessage(message)
+				else:
+					await interaction.followup.send("More than 20 cards contain %s. Please be more specific."%cardname)
+
 		else:
 			if forcedFormat != None:
 				banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
@@ -198,7 +226,12 @@ async def add_format(interaction: discord.Interaction, format_name: str, lflist:
 
 	serverId = interaction.guild_id
 
-	result = await canCommandExecute(interaction, True)
+	result = isValidFilename(format_name)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage())
+		pass
+
+	result = canCommandExecute(interaction, True)
 
 	if result.wasSuccessful():
 
@@ -218,7 +251,7 @@ async def add_format(interaction: discord.Interaction, format_name: str, lflist:
 		else:
 			await interaction.followup.send("The only supported banlist format is a .lflist.conf file")
 	else:
-		await interaction.response.send_message(result.getMessage)
+		await interaction.response.send_message(result.getMessage())
 
 @bot.tree.command(name='tie_format_to_channel', description="Sets the default format for this channel.")
 async def tie_format_to_channel(interaction: discord.Interaction, format_name:str):
@@ -226,9 +259,13 @@ async def tie_format_to_channel(interaction: discord.Interaction, format_name:st
 	"""Sets the default format for this channel"""
 
 	serverId = interaction.guild_id
-	result = await canCommandExecute(interaction, True)
+	result = canCommandExecute(interaction, True)
 
 	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			pass
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
 		result = config.setDefaultFormatForChannel(format_name, channelName, serverId)
@@ -245,9 +282,13 @@ async def check_tied_format(interaction:discord.Interaction):
 	"""Checks if this channel has a format tied to it"""
 
 	serverId = interaction.guild_id
-	result = await canCommandExecute(interaction, False)
+	result = canCommandExecute(interaction, False)
 
 	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			pass
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
 		forcedFormat = config.getForcedFormat(channelName, serverId)
@@ -263,8 +304,12 @@ async def validate_deck(interaction:discord.Interaction, ydk: discord.Attachment
 	"""Validates a deck"""
 
 	serverId = interaction.guild_id
-	result = await canCommandExecute(interaction, True)
+	result = canCommandExecute(interaction, True)
 	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			pass
 		await interaction.response.defer(ephemeral=True)
 		if ydk.filename.endswith(".ydk"):
 			channelName = getChannelName(interaction.channel)
@@ -289,7 +334,7 @@ async def get_banlist(interaction:discord.Interaction):
 	"""Get an EDOPRO banlist"""
 
 	serverId = interaction.guild_id
-	result = serverConfig.checkServerEnabled(serverId)
+	result = canCommandExecute(interaction, False)
 	if result.wasSuccessful():
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
@@ -306,5 +351,26 @@ async def get_banlist(interaction:discord.Interaction):
 			await interaction.followup.send(file=banlistToDiscordFile(banlistFile, forcedFormat))
 	else:
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+
+@bot.tree.command(name="format_list", description="Get a list of all supported formats in this server.")
+async def format_list(interaction:discord.Interaction):
+
+	"""Get a list of all supported formats in this server."""
+
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, False)
+	if result.wasSuccessful():
+		await interaction.response.defer(ephemeral=True)
+		formats = config.getSupportedFormats(serverId)
+		if len(formats) > 0:
+			formatsAsString = ""
+			for format in formats:
+				formatsAsString = "%s\n%s"%(formatsAsString, format)
+			await interaction.followup.send("These are all the supported formats in this server:\n%s"%formatsAsString)
+		else:
+			await interaction.followup.send("No formats have been enabled in this server. To add a format, use /add_format")
+	else:
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+	
 
 startBot()

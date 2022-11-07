@@ -40,6 +40,15 @@ def getChannelName(channel:discord.channel):
 	else:
 		return channel.name
 
+def isValidFilename(filename:str):
+	if len(filename) == 0:
+		return OperationResult(False, "Format name can't be empty")
+	invalidCharacters = "#%&\{\}\\<>*?/$!\'\":@+`|="
+	for char in invalidCharacters:
+		if char in filename:
+			return OperationResult(False, "You can't have \"%s\" in a format name"%char)
+	return OperationResult(True, "")
+
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
