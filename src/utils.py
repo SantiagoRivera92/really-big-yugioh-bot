@@ -10,6 +10,20 @@ class OperationResult:
 	def __init__(self, success, message):
 		self.success = success
 		self.message = message
+		self.hasExtras = False
+		self.extraParam = None
+
+	def addExtras(self, extraParam):
+		self.extraParam = extraParam
+		self.hasExtras = True
+
+	def hasExtraParams(self):
+		return self.hasExtras
+
+	def getExtras(self):
+		if self.hasExtras:
+			return self.extraParam
+		return None
 
 	def wasSuccessful(self):
 		return self.success
