@@ -37,12 +37,17 @@ class Player:
     def getPlayerScore(self):
         return self.score
 
+    def setPlayerName(self, name:str):
+        self.playerName = name
+    
+    def setScore(self, score:float):
+        self.score = score
+
     def toDict(self):
         player = {}
         player[playerIdKey] = self.playerId
         player[playerNameKey] = self.playerName
         player[playerScoreKey] = self.score
-        print(player, flush=True)
         return player
 
 def playerFromDict(playerAsDict):
@@ -60,7 +65,6 @@ class ActiveMatch():
         match = {}
         match[player1Key] = self.player1
         match[player2Key] = self.player2
-        print(match, flush=True)
         return match
 
 def matchFromDict(matchAsDict):
@@ -86,7 +90,6 @@ class Queue():
         queueAsDict = {}
         queueAsDict[playerInQueueKey] = self.player.toDict()
         queueAsDict[timestampInQueueKey] = self.timestamp
-        print(queueAsDict, flush=True)
         return queueAsDict
 
 def queueFromDict(queueAsDict):
@@ -149,7 +152,6 @@ class Matchmaking:
             matchmaking[queueKey] = None
         else:
             matchmaking[queueKey] = queue.toDict()
-        print(matchmaking, flush=True)
         return matchmaking
     
     def save(self):
@@ -169,12 +171,12 @@ class Matchmaking:
             # Update username just in case
             registeredPlayer.setPlayerName(playerName)
             self.save()
-            return OperationResult(False, "User %s was already registered for %s!"%(playerName, self.formatName))
+            return OperationResult(False, "User <@%d> was already registered for %s!"%(playerId, self.formatName))
         else:
             registeredPlayer = Player(playerId, playerName, 1000)
             self.players.append(registeredPlayer)
             self.save()
-            return OperationResult(True, "User %s was registered for %s with a rating of 1000!"%(playerName, self.formatName))
+            return OperationResult(True, "User <@%d> was registered for %s with a rating of 1000!"%(playerId, self.formatName))
 
     def joinQueue(self, playerId: int):
         player = self.getPlayerForId(playerId)
@@ -193,7 +195,7 @@ class Matchmaking:
                 else:
                 # Start a match
                     match = ActiveMatch(currentQueue.player.getPlayerId(), player.getPlayerId())
-                    result = OperationResult(True, "A %s ranked match has started between %s and %s" % (self.formatName, currentQueue.player.getPlayerName(), player.getPlayerName()))
+                    result = OperationResult(True, "A %s ranked match has started between <@%d> and <@%d>" % (self.formatName, currentQueue.player.getPlayerId(), player.getPlayerId()))
                     result.addExtras(match)
                     self.queue = None
                     self.activeMatches.append(match)
@@ -205,14 +207,12 @@ class Matchmaking:
     def cancelMatch(self, playerId: int):
         match = self.getMatchForPlayer(playerId)
         if match != None:
-            player1 = self.getPlayerForId(match.player1)
-            player2 = self.getPlayerForId(match.player2)
             self.activeMatches.remove(match)
             self.save()
             if match.player1 == playerId:
-                return OperationResult(True, "The match between %s and %s has been cancelled by %s's request."%(player1.getPlayerName(), player2.getPlayerName(), player1.getPlayerName()))
+                return OperationResult(True, "The match between <@%d> and <@%d> has been cancelled by <@%d>'s request."%(match.player1, match.player1, match.player1))
             else:
-                return OperationResult(True, "The match between %s and %s has been cancelled by %s's request."%(player1.getPlayerName(), player2.getPlayerName(), player2.getPlayerName()))
+                return OperationResult(True, "The match between <@%d> and <@%d> has been cancelled by <@%d>'s request."%(match.player1, match.player2, match.player2))
         else:
             return OperationResult(False, "You have no active matches")
 
@@ -253,7 +253,7 @@ class Matchmaking:
             loser.setScore(elo.getLoserUpdatedScore())
             self.activeMatches.remove(match)
             self.save()
-            return OperationResult(True, "%s won their match against %s!"%(winner.getPlayerName(), loser.getPlayerName()))
+            return OperationResult(True, "<@%d> won their match against <@%d>!"%(winner.getPlayerId(), loser.getPlayerId()))
         else:
             return OperationResult(False, "You don't have any pending active matches")
 
@@ -261,9 +261,9 @@ class Matchmaking:
         playerIds = [player1, player2]
         for match in self.activeMatches:
             if match.player1 in playerIds:
-                return OperationResult(False, "%s has an active match already"%player1.name)
+                return OperationResult(False, "<@%d> has an active match already"%player1)
             if match.player2 in playerIds:
-                return OperationResult(False, "%s has an active match already"%player2.name)
+                return OperationResult(False, "<@%d> has an active match already"%player2)
         return OperationResult(True, "")
 
     def getScoreForPlayer(self, userId:int):

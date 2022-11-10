@@ -12,4 +12,4 @@ class ServerConfig:
         if serverId in serverList:
             return OperationResult(True, "")
         
-        return OperationResult(False, "Server %d is not enabled. Contact @DiamondDudeYGO#5198 to enable the bot in this server."%serverId)
+        return OperationResult(False, "This server is not enabled.\n\nTo enable this server you have to be a member in https://patreon.com/DiamondDudeYGO \n\nOnce you've done that, contact @DiamondDudeYGO#5198 with this server ID: %d."%serverId)

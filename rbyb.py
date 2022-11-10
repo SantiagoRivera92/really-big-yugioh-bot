@@ -1,4 +1,5 @@
 import discord
+import random
 from discord import File
 from src.deck_validation import DeckValidator
 from src.banlist_validation import BanlistValidator
@@ -40,7 +41,7 @@ async def validateYDK(formatName, attachment, serverId):
 
 	banlistFile = config.getBanlistForFormat(formatName, serverId)
 
-	if config.isFormatSupported(formatName):
+	if config.isFormatSupported(formatName, serverId):
 		ydkFile = await attachment.read()
 		result = deckValidator.validateDeck(ydkFile, banlistFile)
 		if result.wasSuccessful():
@@ -324,7 +325,7 @@ async def validate_deck(interaction:discord.Interaction, ydk: discord.Attachment
 				else:
 					await interaction.followup.send("No formats have been enabled in this server. To add a format, use /add_format")
 			else:
-				validation = await validateYDK(forcedFormat, ydk)
+				validation = await validateYDK(forcedFormat, ydk, serverId)
 				await interaction.followup.send(validation)
 		else:
 			await interaction.followup.send("Only .ydk files can be validated")
@@ -379,12 +380,14 @@ async def format_list(interaction:discord.Interaction):
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 
 @bot.tree.command(name="register_for_league",description="Register a player for a league.")
-async def register_for_league(interaction:discord.Interaction, player_name:str):
+async def register_for_league(interaction:discord.Interaction):
 
 	"""Register a player for a league. If already registered, updates your name in the leaderboard for this format."""
 
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
+	playerName = "%s#%s"%(interaction.user.name, interaction.user.discriminator)
+	print(playerName, flush=True)
 	channelName = getChannelName(interaction.channel)
 	result = canCommandExecute(interaction, False)
 	if not result.wasSuccessful():
@@ -396,7 +399,7 @@ async def register_for_league(interaction:discord.Interaction, player_name:str):
 		await interaction.followup.send("There is no format tied to this channel.")
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
-	result = manager.registerPlayer(playerId, player_name)
+	result = manager.registerPlayer(playerId, playerName)
 	await interaction.followup.send(result.getMessage())
 	
 @bot.tree.command(name="check_rating", description="Checks your score in the leaderboard for the format tied to this channel.")
@@ -587,5 +590,8 @@ async def notify_ranked_win(interaction:discord.Interaction):
 		await interaction.channel.send(result.getMessage())
 	else:
 		await interaction.followup.send(result.getMessage())
+
+	
+
 
 startBot()
