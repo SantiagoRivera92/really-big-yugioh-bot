@@ -1,5 +1,6 @@
 import discord
-import random
+from typing import List
+from discord import app_commands
 from discord import File
 from src.deck_validation import DeckValidator
 from src.banlist_validation import BanlistValidator
@@ -164,7 +165,7 @@ async def card(interaction: discord.Interaction, cardname: str):
 		channelName = getChannelName(interaction.channel)
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
 			return
 		forcedFormat = config.getForcedFormat(channelName, serverId)
 		card = cardCollection.getCardFromCardName(cardname)
@@ -264,7 +265,7 @@ async def tie_format_to_channel(interaction: discord.Interaction, format_name:st
 	if result.wasSuccessful():
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
 			return
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
@@ -287,7 +288,7 @@ async def check_tied_format(interaction:discord.Interaction):
 	if result.wasSuccessful():
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
 			return
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
@@ -308,7 +309,7 @@ async def validate_deck(interaction:discord.Interaction, ydk: discord.Attachment
 	if result.wasSuccessful():
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
 			return
 		await interaction.response.defer(ephemeral=True)
 		if ydk.filename.endswith(".ydk"):
@@ -500,7 +501,7 @@ async def print_leaderboard(interaction:discord.Interaction):
 	manager = MatchmakingManager(forcedFormat, serverId)
 	leaderboard = manager.getLeaderboard()
 	if len(leaderboard) == 0:
-		await interaction.followup.send("There are no players registered for the %s league.")
+		await interaction.followup.send("There are no players registered for the %s league."%forcedFormat)
 	else:
 		lb = ""
 		i = 1
@@ -622,9 +623,9 @@ async def update_format(interaction:discord.Interaction, format_name: str, lflis
 			decodedFileContent = fileContent.decode("utf-8")
 			result = banlistValidator.validateBanlist(decodedFileContent)
 			if result.wasSuccessful():
-				result = config.addSupportedFormat(format_name, decodedFileContent, serverId)
+				result = config.editSupportedFormat(format_name, decodedFileContent, serverId)
 				if result.wasSuccessful():
-					await interaction.followup.send("Your format was added to the bot!")
+					await interaction.followup.send("Your format was updated!")
 				else:
 					await interaction.followup.send(result.getMessage())
 			else:
@@ -666,6 +667,30 @@ async def remove_format(interaction:discord.Interaction, format_name: str):
 			await interaction.followup.send(result.getMessage())	
 	else:
 		await interaction.response.send_message(result.getMessage())
+
+@tie_format_to_channel.autocomplete("format_name")
+@update_format.autocomplete("format_name")
+@remove_format.autocomplete("format_name")
+async def format_autocomplete(interaction:discord.Interaction, current:str) -> List[app_commands.Choice[str]]:
+	choices:List[app_commands.Choice[str]] = []
+	formats = config.getSupportedFormats(interaction.guild_id)
+	if len(formats) <= 25:
+		for format in formats:
+			choice = app_commands.Choice(name=format, value=format)
+			choices.append(choice)
+	return choices
+
+@card.autocomplete("cardname")
+async def card_autocomplete(interaction:discord.Interaction, current:str) -> List[app_commands.Choice[str]]:
+	choices:List[app_commands.Choice[str]] = []
+	if len(current) >= 3:
+		cardCollection.refreshCards()
+		cards = cardCollection.getCardsFromPartialCardName(current)
+		for card in cards:
+			if len(choices) < 25:
+				choice = app_commands.Choice(name=card, value=card)
+				choices.append(choice)
+	return choices
 
 
 startBot()

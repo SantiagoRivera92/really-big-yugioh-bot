@@ -15,7 +15,12 @@ class BanlistGenerator:
 		self.createFolderForServer(serverId)
 		filename = "./lflist/%d/%s.lflist.conf" % (serverId,formatName)
 		with open(filename, 'w', encoding="utf-8") as banlist:
-			banlist.write(lflistFile)
+			banlistAsLines = lflistFile.split("\n")
+			for line in banlistAsLines:
+				line = line.replace("\n", "").replace("\r", "")
+				if len(line) > 0:
+					banlist.write(line)
+					banlist.write("\n")
 		return OperationResult(True, "")
 
 	def deleteBanlist(self, formatName, serverId):

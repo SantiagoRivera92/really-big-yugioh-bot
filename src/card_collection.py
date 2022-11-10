@@ -1,4 +1,5 @@
 import urllib.request
+from typing import List
 import json
 import time
 
@@ -41,7 +42,7 @@ class CardCollection:
 
 	def getCardsFromPartialCardName(self, cardName):
 		self.refreshCards()
-		partialMatches = []
+		partialMatches:List[str] = []
 		for card in self.cards:
 			if cardName.lower() in card.get('name').lower():
 				partialMatches.append(card.get('name'))
