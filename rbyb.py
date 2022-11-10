@@ -591,7 +591,81 @@ async def notify_ranked_win(interaction:discord.Interaction):
 	else:
 		await interaction.followup.send(result.getMessage())
 
+@bot.tree.command(name="update_format", description="Updates the banlist for an already existing format")
+async def update_format(interaction:discord.Interaction, format_name: str, lflist: discord.Attachment):
+
+	serverId = interaction.guild_id
+
+	result = isValidFilename(format_name)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage())
+		return
+
+	result = canCommandExecute(interaction, True)
+
+	supportedFormats = config.getSupportedFormats(serverId)
+	found = False
+	for format in supportedFormats:
+		if format.lower() == format_name.lower():
+			found=True
+			break
 	
+	if not found:
+		await interaction.response.send_message("There's no format named %s. You can get a list of all installed formats with /format_list."%format_name)
+		return
+
+	if result.wasSuccessful():
+
+		await interaction.response.defer(ephemeral=True)
+		if lflist.filename.endswith(".lflist.conf"):
+			fileContent = await lflist.read()
+			decodedFileContent = fileContent.decode("utf-8")
+			result = banlistValidator.validateBanlist(decodedFileContent)
+			if result.wasSuccessful():
+				result = config.addSupportedFormat(format_name, decodedFileContent, serverId)
+				if result.wasSuccessful():
+					await interaction.followup.send("Your format was added to the bot!")
+				else:
+					await interaction.followup.send(result.getMessage())
+			else:
+				await interaction.followup.send(result.getMessage())	
+		else:
+			await interaction.followup.send("The only supported banlist format is a .lflist.conf file")
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="remove_format", description="Removes a format")
+async def remove_format(interaction:discord.Interaction, format_name: str):
+	serverId = interaction.guild_id
+
+	result = isValidFilename(format_name)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage())
+		return
+
+	result = canCommandExecute(interaction, True)
+
+	supportedFormats = config.getSupportedFormats(serverId)
+	found = False
+	for format in supportedFormats:
+		if format.lower() == format_name.lower():
+			found=True
+			break
+	
+	if not found:
+		await interaction.response.send_message("There's no format named %s. You can get a list of all installed formats with /format_list."%format_name)
+		return
+
+	if result.wasSuccessful():
+
+		await interaction.response.defer(ephemeral=True)
+		result = config.removeFormat(format_name, serverId)
+		if result.wasSuccessful():
+			await interaction.followup.send("Format %s has been removed from the bot"%format_name)
+		else:
+			await interaction.followup.send(result.getMessage())	
+	else:
+		await interaction.response.send_message(result.getMessage())
 
 
 startBot()

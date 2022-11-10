@@ -17,3 +17,10 @@ class BanlistGenerator:
 		with open(filename, 'w', encoding="utf-8") as banlist:
 			banlist.write(lflistFile)
 		return OperationResult(True, "")
+
+	def deleteBanlist(self, formatName, serverId):
+		filename = "./lflist/%d/%s.lflist.conf" % (serverId,formatName)
+		if os.path.exists(filename):
+			os.remove(filename)
+			return OperationResult(True, "")
+		return OperationResult(False, "Banlist file doesn't exist")

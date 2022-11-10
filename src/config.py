@@ -2,6 +2,7 @@ import json
 import os
 from src.banlist_generation import BanlistGenerator
 from src.utils import OperationResult
+from typing import List
 
 discordApiKey = 'discord_key'
 maxResultsKey = 'max_results'
@@ -52,23 +53,111 @@ class Config:
 		config = self.getConfigForServer(serverId)
 		supportedFormats = config.get(supportedFormatsKey)
 		
-		if formatName in supportedFormats:
-			result = OperationResult(False, "Format %s already exists" % formatName)
-		else:
-			result = self.banlistGenerator.writeBanlist(formatName, lflistFile, serverId)
-			if result.wasSuccessful():
+		for format in supportedFormats:
+			if format.lower() == formatName.lower():
+				return OperationResult(False, "Format %s already exists. You can edit the format using /edit_format." % formatName)
 
-				supportedFormats.append(formatName)
-				banlistFiles = config.get(banlistFilesKey)
-				newBanlistFile = {}
-				newBanlistFile[nameKey] = formatName
-				newBanlistFile[filenameKey] = "./lflist/%d/%s.lflist.conf"%(serverId,formatName)
-				banlistFiles.append(newBanlistFile)
+		
+		result = self.banlistGenerator.writeBanlist(formatName, lflistFile, serverId)
+		if result.wasSuccessful():
+			supportedFormats.append(formatName)
+			banlistFiles = config.get(banlistFilesKey)
+			newBanlistFile = {}
+			newBanlistFile[nameKey] = formatName
+			newBanlistFile[filenameKey] = "./lflist/%d/%s.lflist.conf"%(serverId,formatName)
+			banlistFiles.append(newBanlistFile)
 
-				config[banlistFilesKey] = banlistFiles
-				config[supportedFormatsKey] = supportedFormats
-				self.saveConfigForServer(config, serverId)
+			config[banlistFilesKey] = banlistFiles
+			config[supportedFormatsKey] = supportedFormats
+			self.saveConfigForServer(config, serverId)
 		return result
+
+
+	def editSupportedFormat(self, formatName, lflistFile, serverId):
+		config = self.getConfigForServer(serverId)
+		supportedFormats = config.get(supportedFormatsKey)
+		
+		found = False
+		forcedFormat = ""
+		for format in supportedFormats:
+			if format.lower() == formatName.lower():
+				found=True
+				forcedFormat = format
+		
+		if not found:
+			return OperationResult(False, "Format %s doesn't exist yet. You can add a new format using /add_format"%formatName)
+		
+		result = self.banlistGenerator.writeBanlist(forcedFormat, lflistFile, serverId)
+		return result
+
+	def renameFormat(self, oldName, newName, serverId):
+		config = self.getConfigForServer(serverId)
+		supportedFormats: List[str] = config.get(supportedFormatsKey)
+
+		found = False
+		forcedFormat = ""
+		for format in supportedFormats:
+			if format.lower() == oldName.lower():
+				found = True
+				forcedFormat = format
+		
+		if not found:
+			return OperationResult(False, "Format %s doesn't exist yet. You can check which formats already exist with /format_list."%oldName)
+		
+		supportedFormats.remove(forcedFormat)
+		supportedFormats.add(newName)
+
+		banlistFiles: List[dict] = config.get(banlistFilesKey)
+		for banlist in banlistFiles:
+			if banlist.get(nameKey).lower() == oldName.lower():
+				banlist[nameKey] = newName
+		
+		channelConfig :List[dict] = config.get(channelConfigKey)
+		for config in channelConfig:
+			if config.get(nameKey).lower() == oldName.lower():
+				config[nameKey] = newName
+
+		config[banlistFilesKey] = banlistFiles
+		config[supportedFormatsKey] = supportedFormats
+		config[channelConfigKey] = channelConfig
+		self.saveConfigForServer(config, serverId)
+		return OperationResult(True, "")
+
+	def removeFormat(self, formatName, serverId):
+		config = self.getConfigForServer(serverId)
+		supportedFormats :List[str] = config.get(supportedFormatsKey)
+
+		found = False
+		forcedFormat = ""
+		for format in supportedFormats:
+			if format.lower() == formatName.lower():
+				found = True
+				forcedFormat = format
+		
+		if not found:
+			return OperationResult(False, "Format %s doesn't exist yet. You can check which formats already exist with /format_list"%forcedFormat)
+
+		newBanlistFiles = []
+
+		banlistFiles: List[dict] = config.get(banlistFilesKey)
+		for banlist in banlistFiles:
+			if banlist.get(nameKey) != forcedFormat:
+				newBanlistFiles.append(banlist)
+		
+		newChannelConfig = []
+		channelConfig = config.get(channelConfigKey)
+		for individualChannelConfig in channelConfig:
+			if individualChannelConfig.get(nameKey) != forcedFormat:
+				newChannelConfig.append(individualChannelConfig)
+
+		supportedFormats.remove(forcedFormat)
+
+		config[banlistFilesKey] = newBanlistFiles
+		config[supportedFormatsKey] = supportedFormats
+		config[channelConfigKey] = newChannelConfig
+		self.banlistGenerator.deleteBanlist(forcedFormat, serverId)
+		self.saveConfigForServer(config, serverId)
+		return OperationResult(True, "")
 
 	def setDefaultFormatForChannel(self, formatName, channelName, serverId):
 
@@ -122,6 +211,8 @@ class Config:
 				else:
 					return None
 		return defaultFormat
+
+
 
 	def isFormatSupported(self, formatName, serverId):
 		config = self.getConfigForServer(serverId)
