@@ -4,22 +4,23 @@ import time
 from typing import List
 from src.utils import OperationResult
 from src.elo import Elo
+import src.strings
 
-eloFilename = "./json/elo/%d/%s/elo.json"
-folderName = "./json/elo/%d/%s"
+ELO_FILE_NAME = "./json/elo/%d/%s/elo.json"
+FOLDER_NAME = "./json/elo/%d/%s"
 
-player1Key = "player1"
-player2Key = "player2"
-serverIdKey = "server_id"
-formatNameKey = "format_name"
-playersKey = "players"
-activeMatchesKey = "active_matches"
-playerIdKey = "player_id"
-playerNameKey = "player_name"
-playerScoreKey = "score"
-queueKey = "queue"
-playerInQueueKey = "player"
-timestampInQueueKey = "timestamp"
+PLAYER_1_KEY = "player1"
+PLAYER_2_KEY = "player2"
+SERVER_ID_KEY = "server_id"
+FORMAT_NAME_KEY = "format_name"
+PLAYERS_KEY = "players"
+ACTIVE_MATCHES_KEY = "active_matches"
+PLAYER_ID_KEY = "player_id"
+PLAYER_NAME_KEY = "player_name"
+PLAYER_SCORE_KEY = "score"
+QUEUE_KEY = "queue"
+PLAYER_IN_QUEUE_KEY = "player"
+TIMESTAMP_IN_QUEUE_KEY = "timestamp"
 
 class Player:
     
@@ -45,15 +46,15 @@ class Player:
 
     def toDict(self):
         player = {}
-        player[playerIdKey] = self.playerId
-        player[playerNameKey] = self.playerName
-        player[playerScoreKey] = self.score
+        player[PLAYER_ID_KEY] = self.playerId
+        player[PLAYER_NAME_KEY] = self.playerName
+        player[PLAYER_SCORE_KEY] = self.score
         return player
 
 def playerFromDict(playerAsDict):
-    playerId = playerAsDict.get(playerIdKey)
-    playerName = playerAsDict.get(playerNameKey)
-    playerScore = playerAsDict.get(playerScoreKey)
+    playerId = playerAsDict.get(PLAYER_ID_KEY)
+    playerName = playerAsDict.get(PLAYER_NAME_KEY)
+    playerScore = playerAsDict.get(PLAYER_SCORE_KEY)
     return Player(playerId, playerName, playerScore)
 
 class ActiveMatch():
@@ -63,13 +64,13 @@ class ActiveMatch():
 
     def toDict(self):
         match = {}
-        match[player1Key] = self.player1
-        match[player2Key] = self.player2
+        match[PLAYER_1_KEY] = self.player1
+        match[PLAYER_2_KEY] = self.player2
         return match
 
 def matchFromDict(matchAsDict):
-    player1 = matchAsDict.get(player1Key)
-    player2 = matchAsDict.get(player2Key)
+    player1 = matchAsDict.get(PLAYER_1_KEY)
+    player2 = matchAsDict.get(PLAYER_2_KEY)
     return ActiveMatch(player1, player2)
 
 class Queue():
@@ -88,13 +89,13 @@ class Queue():
 
     def toDict(self):
         queueAsDict = {}
-        queueAsDict[playerInQueueKey] = self.player.toDict()
-        queueAsDict[timestampInQueueKey] = self.timestamp
+        queueAsDict[PLAYER_IN_QUEUE_KEY] = self.player.toDict()
+        queueAsDict[TIMESTAMP_IN_QUEUE_KEY] = self.timestamp
         return queueAsDict
 
 def queueFromDict(queueAsDict):
-    playerInQueue = playerFromDict(queueAsDict.get(playerInQueueKey))
-    timestampInQueue = queueAsDict.get(timestampInQueueKey)
+    playerInQueue = playerFromDict(queueAsDict.get(PLAYER_IN_QUEUE_KEY))
+    timestampInQueue = queueAsDict.get(TIMESTAMP_IN_QUEUE_KEY)
     queue = Queue(playerInQueue)
     queue.setTimestamp(timestampInQueue)
     return queue
@@ -103,8 +104,8 @@ class Matchmaking:
     def __init__(self, formatName:str, serverId:int):
         self.formatName = formatName
         self.serverId = serverId
-        self.filename = eloFilename%(serverId, formatName)
-        self.foldername = folderName%(serverId, formatName)
+        self.filename = ELO_FILE_NAME%(serverId, formatName)
+        self.foldername = FOLDER_NAME%(serverId, formatName)
         if not os.path.exists(self.foldername):
             os.makedirs(self.foldername)
         if not os.path.exists(self.filename):
@@ -113,13 +114,13 @@ class Matchmaking:
         with open(self.filename) as file:
             file = json.load(file)
             self.players:List[Player] = []
-            for player in file.get(playersKey):
+            for player in file.get(PLAYERS_KEY):
                 self.players.append(playerFromDict(player))
             self.activeMatches:List[ActiveMatch] = []
-            for match in file.get(activeMatchesKey):
+            for match in file.get(ACTIVE_MATCHES_KEY):
                 self.activeMatches.append(matchFromDict(match))
             self.queue:Queue = None
-            queueInFile = file.get(queueKey)
+            queueInFile = file.get(QUEUE_KEY)
             if queueInFile != None:
                 queue = queueFromDict(queueInFile)
                 if queue.isValid():
@@ -127,31 +128,31 @@ class Matchmaking:
     
     def getDefaultMatchmakingFile(self):
         matchmaking = {}
-        matchmaking[serverIdKey] = self.serverId
-        matchmaking[formatNameKey] = self.formatName
-        matchmaking[playersKey] = []
-        matchmaking[activeMatchesKey] = []
+        matchmaking[SERVER_ID_KEY] = self.serverId
+        matchmaking[FORMAT_NAME_KEY] = self.formatName
+        matchmaking[PLAYERS_KEY] = []
+        matchmaking[ACTIVE_MATCHES_KEY] = []
         return matchmaking       
 
     def toDict(self):
         matchmaking = {}
-        matchmaking[serverIdKey] = self.serverId
-        matchmaking[formatNameKey] = self.formatName
+        matchmaking[SERVER_ID_KEY] = self.serverId
+        matchmaking[FORMAT_NAME_KEY] = self.formatName
         matchmakingPlayers = []
         for player in self.players:
             matchmakingPlayers.append(player.toDict())
-        matchmaking[playersKey] = matchmakingPlayers
+        matchmaking[PLAYERS_KEY] = matchmakingPlayers
         matchmakingMatches = []
         for match in self.activeMatches:
             matchmakingMatches.append(match.toDict())
-        matchmaking[activeMatchesKey] = matchmakingMatches
+        matchmaking[ACTIVE_MATCHES_KEY] = matchmakingMatches
         queue = self.queue
         if queue == None:
-            matchmaking[queueKey] = None
+            matchmaking[QUEUE_KEY] = None
         elif not queue.isValid():
-            matchmaking[queueKey] = None
+            matchmaking[QUEUE_KEY] = None
         else:
-            matchmaking[queueKey] = queue.toDict()
+            matchmaking[QUEUE_KEY] = queue.toDict()
         return matchmaking
     
     def save(self):
@@ -171,12 +172,12 @@ class Matchmaking:
             # Update username just in case
             registeredPlayer.setPlayerName(playerName)
             self.save()
-            return OperationResult(False, "User <@%d> was already registered for %s!"%(playerId, self.formatName))
+            return OperationResult(False, src.strings.ERROR_MATCHMAKING_USER_ALREADY_REGISTERED % (playerId, self.formatName))
         else:
             registeredPlayer = Player(playerId, playerName, 1000)
             self.players.append(registeredPlayer)
             self.save()
-            return OperationResult(True, "User <@%d> was registered for %s with a rating of 1000!"%(playerId, self.formatName))
+            return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_USER_REGISTERED % (playerId, self.formatName))
 
     def joinQueue(self, playerId: int):
         player = self.getPlayerForId(playerId)
@@ -186,23 +187,23 @@ class Matchmaking:
                 # Create a queue
                 self.queue = Queue(player)
                 self.save()
-                return OperationResult(True, "You have joined the queue! If someone else joins the queue in 10 minutes, a ranked match will start.")
+                return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_JOINED_QUEUE)
             else:
                 # Is this the same player?
                 if playerId == self.queue.player.getPlayerId():
-                    result = OperationResult(False, "You are already in queue!")
+                    result = OperationResult(False, src.strings.ERROR_MATCHMAKING_ALREADY_IN_QUEUE)
                     return result
                 else:
                 # Start a match
                     match = ActiveMatch(currentQueue.player.getPlayerId(), player.getPlayerId())
-                    result = OperationResult(True, "A %s ranked match has started between <@%d> and <@%d>" % (self.formatName, currentQueue.player.getPlayerId(), player.getPlayerId()))
+                    result = OperationResult(True, src.strings.MESSAGE_MATCHMAKING_MATCH_STARTED % (self.formatName, currentQueue.player.getPlayerId(), player.getPlayerId()))
                     result.addExtras(match)
                     self.queue = None
                     self.activeMatches.append(match)
                     self.save()
                     return result
         else:
-            return OperationResult(False, "You aren't registered to the league. Please register using /register_for_league before joining the queue!")
+            return OperationResult(False, src.strings.ERROR_MATCHMAKING_REGISTER_FIRST)
 
     def cancelMatch(self, playerId: int):
         match = self.getMatchForPlayer(playerId)
@@ -210,11 +211,11 @@ class Matchmaking:
             self.activeMatches.remove(match)
             self.save()
             if match.player1 == playerId:
-                return OperationResult(True, "The match between <@%d> and <@%d> has been cancelled by <@%d>'s request."%(match.player1, match.player1, match.player1))
+                return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_MATCH_CANCELLED % (match.player1, match.player1, match.player1))
             else:
-                return OperationResult(True, "The match between <@%d> and <@%d> has been cancelled by <@%d>'s request."%(match.player1, match.player2, match.player2))
+                return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_MATCH_CANCELLED % (match.player1, match.player2, match.player2))
         else:
-            return OperationResult(False, "You have no active matches")
+            return OperationResult(False, src.strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
 
 
     def startMatch(self, player1:int, player2:int):
@@ -253,17 +254,17 @@ class Matchmaking:
             loser.setScore(elo.getLoserUpdatedScore())
             self.activeMatches.remove(match)
             self.save()
-            return OperationResult(True, "<@%d> won their match against <@%d>!"%(winner.getPlayerId(), loser.getPlayerId()))
+            return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_WON_ELO_UPDATED % (winner.getPlayerId(), winnerScore, elo.getWinnerUpdatedScore(), loser.getPlayerId(), loserScore, elo.getLoserUpdatedScore()))
         else:
-            return OperationResult(False, "You don't have any pending active matches")
+            return OperationResult(False, src.strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
 
     def isNewMatchValid(self, player1:int, player2:int):
         playerIds = [player1, player2]
         for match in self.activeMatches:
             if match.player1 in playerIds:
-                return OperationResult(False, "<@%d> has an active match already"%player1)
+                return OperationResult(False, src.strings.ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS % player1)
             if match.player2 in playerIds:
-                return OperationResult(False, "<@%d> has an active match already"%player2)
+                return OperationResult(False, src.strings.ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS % player2)
         return OperationResult(True, "")
 
     def getScoreForPlayer(self, userId:int):
@@ -283,6 +284,12 @@ class Matchmaking:
                 if sortedList[j].getPlayerScore() < sortedList[j+1].getPlayerScore():
                     sortedList[j], sortedList[j+1] = sortedList[j+1], sortedList[j]
         return sortedList[:10]
+
+    def getIdForPlayerName(self, playerName:str):
+        for player in self.players:
+            if player.getPlayerName() == playerName:
+                return player.getPlayerId
+        return -1
 
     def getPlayers(self):
         return self.players
@@ -331,4 +338,7 @@ class MatchmakingManager:
 
     def cancelMatch(self, playerId: int):
         return self.matchmaking.cancelMatch(playerId)
+
+    def getIdForPlayerName(self, playerName:str):
+        return self.matchmaking.getIdForPlayerName(playerName)
     

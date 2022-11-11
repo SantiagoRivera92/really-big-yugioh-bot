@@ -17,6 +17,9 @@ def getRequest():
 	return request
 
 DATA = 'data'
+KEY_NAME = 'name'
+KEY_ID = 'id'
+KEY_CARD_IMAGES = 'card_images'
 
 class CardCollection:
 	
@@ -36,7 +39,7 @@ class CardCollection:
 	def getCardFromCardName(self,cardName):
 		self.refreshCards()
 		for card in self.cards:
-			if(card.get('name').lower() == cardName.lower()):
+			if(card.get(KEY_NAME).lower() == cardName.lower()):
 				return card
 		return None
 
@@ -44,8 +47,8 @@ class CardCollection:
 		self.refreshCards()
 		partialMatches:List[str] = []
 		for card in self.cards:
-			if cardName.lower() in card.get('name').lower():
-				partialMatches.append(card.get('name'))
+			if cardName.lower() in card.get(KEY_NAME).lower():
+				partialMatches.append(card.get(KEY_NAME))
 		return partialMatches
 
 
@@ -53,8 +56,11 @@ class CardCollection:
 		self.refreshCards()
 		cardIdAsInt = int(cardId)
 		for card in self.cards:
-			if cardIdAsInt == card.get('id'):
-				return card.get('name')
-			for variant in card.get('card_images'):
-				if cardIdAsInt == variant.get('id'):
-					return card.get('name')
+			if cardIdAsInt == card.get(KEY_ID):
+				return card.get(KEY_NAME)
+			for variant in card.get(KEY_CARD_IMAGES):
+				if cardIdAsInt == variant.get(KEY_ID):
+					return card.get(KEY_NAME)
+
+
+

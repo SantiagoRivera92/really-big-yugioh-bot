@@ -1,8 +1,6 @@
 import json
 
-discordApiKey = 'discord_key'
-challongeApiKey = 'challonge_key'
-challongeUsername = 'challonge_username'
+DISCORD_API_KEY = 'discord_key'
 
 class CredentialsManager:
 	def __init__(self, credentialsFile):
@@ -10,10 +8,4 @@ class CredentialsManager:
 			self.credentials = json.load(cred)
 
 	def getDiscordAPIKey(self):
-		return self.credentials.get(discordApiKey)
-	
-	def getChallongeAPIKey(self):
-		return self.credentials.get(challongeApiKey)
-
-	def getChallongeUsername(self):
-		return self.credentials.get(challongeUsername)
+		return self.credentials.get(DISCORD_API_KEY)

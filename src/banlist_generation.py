@@ -1,5 +1,6 @@
 import os
 from src.utils import OperationResult
+import src.strings
 
 class BanlistGenerator:
 
@@ -28,4 +29,4 @@ class BanlistGenerator:
 		if os.path.exists(filename):
 			os.remove(filename)
 			return OperationResult(True, "")
-		return OperationResult(False, "Banlist file doesn't exist")
+		return OperationResult(False, src.strings.ERROR_BANLIST_FILE_MISSING)

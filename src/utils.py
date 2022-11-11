@@ -1,10 +1,12 @@
 import math
 import discord
+import src.strings
 from discord import app_commands
 
-dmChannelKey = "dm"
-groupChannelKey = "group"
-threadChannelKey = "thread"
+DM_CHANNEL_KEY = "dm"
+GROUP_CHANNEL_KEY = "group"
+THREAD_CHANNEL_KEY = "thread"
+OTHER_KEY = "other"
 
 class OperationResult:
 	def __init__(self, success, message):
@@ -46,21 +48,23 @@ def getStatusInBanlist(cardId, banlist):
 
 def getChannelName(channel:discord.channel):
 	if isinstance(channel, discord.channel.DMChannel):
-		return dmChannelKey
+		return DM_CHANNEL_KEY
 	elif isinstance(channel, discord.channel.GroupChannel):
-		return groupChannelKey
+		return GROUP_CHANNEL_KEY
 	elif isinstance(channel, discord.channel.Thread):
-		return threadChannelKey
+		return THREAD_CHANNEL_KEY
+	elif isinstance(channel, discord.channel.PartialMessageable):
+		return OTHER_KEY
 	else:
 		return channel.name
 
 def isValidFilename(filename:str):
 	if len(filename) == 0:
-		return OperationResult(False, "Format name can't be empty")
+		return OperationResult(False, src.strings.ERROR_FORMAT_NAME_EMPTY)
 	invalidCharacters = "#%&\{\}\\<>*?/$!\'\":@+`|="
 	for char in invalidCharacters:
 		if char in filename:
-			return OperationResult(False, "You can't have \"%s\" in a format name"%char)
+			return OperationResult(False, src.strings.ERROR_FORMAT_NAME_INVALID_CHARACTER % char)
 	return OperationResult(True, "")
 
 class MyClient(discord.Client):

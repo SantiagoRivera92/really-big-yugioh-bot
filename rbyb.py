@@ -12,18 +12,22 @@ from src.config import Config
 from src.server_config import ServerConfig
 from src.credentials_manager import CredentialsManager
 from src.matchmaking import MatchmakingManager
+from src.deck_collection import DeckCollectionManager
+import src.strings as Strings
 
 #Configuration
 
-credentialsFile = 'json/credentials.json'
-enabledServers = 'json/enabledServers.json'
+CREDENTIALS_FILE = 'json/credentials.json'
+ENABLED_SERVERS = 'json/enabledServers.json'
+REGULAR_HELP_FILE = 'docs/regular_help.txt'
+ADMIN_HELP_FILE = 'docs/admin_help.txt'
 
 cardCollection = CardCollection()
-credentials = CredentialsManager(credentialsFile)
+credentials = CredentialsManager(CREDENTIALS_FILE)
 config = Config(cardCollection)
 deckValidator = DeckValidator(cardCollection)
 banlistValidator = BanlistValidator()
-serverConfig = ServerConfig(enabledServers)
+serverConfig = ServerConfig(ENABLED_SERVERS)
 
 
 intents = discord.Intents.default()
@@ -33,24 +37,27 @@ bot = MyClient(intents=intents)
 def startBot():
 	bot.run(credentials.getDiscordAPIKey())
 
-def banlistToDiscordFile(banlistFile, formatName):
-	description = "Banlist for %s in .lflist.conf format (as used by EDOPRO)" % formatName
+def banlistToDiscordFile(banlistFile:str, formatName:str):
 	fileName = "%s.lflist.conf" % formatName
-	return File(description = description, filename=fileName, fp=banlistFile)
+	return File( filename=fileName, fp=banlistFile)
+
+def ydkToDiscordFile(ydkFile:str, playerName:str):
+	fileName = "%s.ydk"%playerName
+	return File(filename=fileName, fp=ydkFile)
 
 async def validateYDK(formatName, attachment, serverId):
 
 	banlistFile = config.getBanlistForFormat(formatName, serverId)
 
 	if config.isFormatSupported(formatName, serverId):
-		ydkFile = await attachment.read()
+		ydkFile = await attachment.read().decode("utf-8")
 		result = deckValidator.validateDeck(ydkFile, banlistFile)
 		if result.wasSuccessful():
-			return "Your deck is valid in %s" % formatName
+			return Strings.BOT_MESSAGE_DECK_VALID % formatName
 		else:
-			return "Your deck is not valid in %s.\n%s"%(formatName, result.getMessage())
+			return Strings.ERROR_MESSAGE_DECK_INVALID % (formatName, result.getMessage())
 	else:
-		return "%s is not supported as a format as of right now." % formatName
+		return Strings.BOT_MESSAGE_FORMAT_UNSUPPORTED % formatName
 
 # Callbacks
 
@@ -117,10 +124,10 @@ class FormatForPartialCardnameCallback:
 
 	async def executeCallback(self, formatName, cards):
 		callback = PartialCardnameCallback(self.serverId)
-		pagination = PaginationView('Select a card')
+		pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_CARD)
 		pagination.setup(cards, self.interaction, callback, formatName)
 		await self.message.delete()
-		message = await self.interaction.followup.send(content="Multiple results available. Please pick one.", view=pagination)
+		message = await self.interaction.followup.send(content=Strings.BOT_MESSAGE_MULTIPLE_RESULTS_AVAILABLE, view=pagination)
 		callback.setMessage(message)
 
 
@@ -140,7 +147,7 @@ def canCommandExecute(interaction:discord.Interaction, adminOnly):
 	channelName = getChannelName(interaction.channel)
 	enabled = config.isChannelEnabled(channelName, serverId)
 	if not enabled:
-		return OperationResult(False, "The bot is disabled in this channel!")
+		return OperationResult(False, Strings.ERROR_MESSAGE_BOT_DISABLED_IN_CHANNEL)
 	if adminOnly:
 		isAdmin = interaction.user.guild_permissions.administrator
 		if not isAdmin:
@@ -148,7 +155,7 @@ def canCommandExecute(interaction:discord.Interaction, adminOnly):
 			if interaction.user.id == 164008587171987467:
 				return OperationResult(True, "")
 			else:
-				return OperationResult(False, "This command requires admin privileges")
+				return OperationResult(False, Strings.ERROR_MESSAGE_NOT_AN_ADMIN)
 	return OperationResult(True, "")
 
 @bot.tree.command(name="card", description='Displays card text for any given card name')
@@ -165,14 +172,14 @@ async def card(interaction: discord.Interaction, cardname: str):
 		channelName = getChannelName(interaction.channel)
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			return
 		forcedFormat = config.getForcedFormat(channelName, serverId)
 		card = cardCollection.getCardFromCardName(cardname)
 		if card == None:
 			cards = cardCollection.getCardsFromPartialCardName(cardname)
 			if len(cards) == 0:
-				await interaction.followup.send("There are no cards with %s in their name"%cardname)
+				await interaction.followup.send(Strings.ERROR_MESSAGE_PARTIAL_SEARCH_FAILED % cardname)
 			elif len(cards) == 1:
 				cardname = cards[0]
 				card = cardCollection.getCardFromCardName(cardname)
@@ -182,29 +189,29 @@ async def card(interaction: discord.Interaction, cardname: str):
 					await interaction.followup.send(embed=embed)
 				else:
 					formats = config.getSupportedFormats(serverId)
-					pagination = PaginationView("Select a format")
+					pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT)
 					callback = FormatForCardLegalityCallback(serverId)
-					pagination.setup(config.getSupportedFormats(serverId), interaction, callback, card)
-					message = await interaction.followup.send("Please choose a format to display banlist status", view=pagination, wait=True)
+					pagination.setup(formats, interaction, callback, card)
+					message = await interaction.followup.send(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT_TO_DISPLAY_BANLIST_STATUS, view=pagination, wait=True)
 					callback.setMessage(message)
 			elif forcedFormat != None:
 				if len(cards) <= 20:
-					pagination = PaginationView('Select a card')
+					pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_CARD)
 					callback = PartialCardnameCallback(serverId)
 					pagination.setup(cards, interaction, callback, forcedFormat)
-					message = await interaction.followup.send("Multiple results available. Please pick one.", view=pagination, wait=True)
+					message = await interaction.followup.send(Strings.BOT_MESSAGE_MULTIPLE_RESULTS_AVAILABLE, view=pagination, wait=True)
 					callback.setMessage(message)
 				else:
-					await interaction.followup.send("More than 20 cards contain %s. Please be more specific."%cardname)
+					await interaction.followup.send(Strings.ERROR_MESSAGE_TOO_MANY_RESULTS % cardname)
 			else:
 				if len(cards) <= 20:
-					pagination = PaginationView('Select a format')
+					pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT)
 					callback = FormatForPartialCardnameCallback(serverId, interaction)
 					pagination.setup(config.getSupportedFormats(serverId), interaction, callback, cards)
-					message = await interaction.followup.send("Select a format", view=pagination, wait=True)
+					message = await interaction.followup.send(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT, view=pagination, wait=True)
 					callback.setMessage(message)
 				else:
-					await interaction.followup.send("More than 20 cards contain %s. Please be more specific."%cardname)
+					await interaction.followup.send(Strings.ERROR_MESSAGE_TOO_MANY_RESULTS % cardname)
 
 		else:
 			if forcedFormat != None:
@@ -212,10 +219,10 @@ async def card(interaction: discord.Interaction, cardname: str):
 				embed = cardToEmbed(card, banlistFile, forcedFormat, bot)
 				await interaction.followup.send(embed=embed)
 			else:
-				pagination = PaginationView("Select a format")
+				pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT)
 				callback = FormatForCardLegalityCallback(serverId)
 				pagination.setup(config.getSupportedFormats(serverId), interaction, callback, card)
-				message = await interaction.followup.send("Please choose a format to display banlist status", view=pagination, wait=True)
+				message = await interaction.followup.send(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT_TO_DISPLAY_BANLIST_STATUS, view=pagination, wait=True)
 				callback.setMessage(message)
 	else:
 		await interaction.response.send_message(result.getMessage())
@@ -244,13 +251,13 @@ async def add_format(interaction: discord.Interaction, format_name: str, lflist:
 			if result.wasSuccessful():
 				result = config.addSupportedFormat(format_name, decodedFileContent, serverId)
 				if result.wasSuccessful():
-					await interaction.followup.send("Your format was added to the bot!")
+					await interaction.followup.send(Strings.BOT_MESSAGE_FORMAT_ADDED)
 				else:
 					await interaction.followup.send(result.getMessage())
 			else:
 				await interaction.followup.send(result.getMessage())	
 		else:
-			await interaction.followup.send("The only supported banlist format is a .lflist.conf file")
+			await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_BANLIST_FORMAT)
 	else:
 		await interaction.response.send_message(result.getMessage())
 
@@ -265,13 +272,13 @@ async def tie_format_to_channel(interaction: discord.Interaction, format_name:st
 	if result.wasSuccessful():
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			return
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
 		result = config.setDefaultFormatForChannel(format_name, channelName, serverId)
 		if result.wasSuccessful():
-			await interaction.followup.send("%s is now the default format for channel %s"%(format_name, channelName))
+			await interaction.followup.send(Strings.BOT_MESSAGE_FORMAT_TIED % (format_name, channelName))
 		else:
 			await interaction.followup.send(result.getMessage())
 	else:
@@ -288,15 +295,15 @@ async def check_tied_format(interaction:discord.Interaction):
 	if result.wasSuccessful():
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			return
 		await interaction.response.defer(ephemeral=True)
 		channelName = getChannelName(interaction.channel)
 		forcedFormat = config.getForcedFormat(channelName, serverId)
 		if forcedFormat == None:
-			await interaction.followup.send("Channel %s has no format tied to it"%channelName)
+			await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		else:
-			await interaction.followup.send("Channel %s is tied to a format: %s"%(channelName, forcedFormat))
+			await interaction.followup.send(Strings.BOT_MESSAGE_CHANNEL_IS_TIED_TO_FORMAT % (channelName, forcedFormat))
 	else:
 		await interaction.response.send_message(result.getMessage())
 
@@ -305,11 +312,11 @@ async def validate_deck(interaction:discord.Interaction, ydk: discord.Attachment
 	"""Validates a deck"""
 
 	serverId = interaction.guild_id
-	result = canCommandExecute(interaction, True)
+	result = canCommandExecute(interaction, False)
 	if result.wasSuccessful():
 		supportedFormats = config.getSupportedFormats(serverId)
 		if len(supportedFormats) == 0:
-			await interaction.response.send_message("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			return
 		await interaction.response.defer(ephemeral=True)
 		if ydk.filename.endswith(".ydk"):
@@ -318,18 +325,18 @@ async def validate_deck(interaction:discord.Interaction, ydk: discord.Attachment
 			if forcedFormat == None:
 				supportedFormats = config.getSupportedFormats(serverId)
 				if len(supportedFormats)>0:
-					pagination = PaginationView("Select a format")
+					pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT)
 					callback = FormatForBanlistCallback(serverId)
 					pagination.setup(config.getSupportedFormats(serverId), interaction, callback, ydk)
-					message = await interaction.followup.send("Please choose a format to validate your deck", view=pagination, wait=True)
+					message = await interaction.followup.send(Strings.BOT_MESSAGE_CHOOSE_FORMAT_TO_VALIDATE_DECK, view=pagination, wait=True)
 					callback.setMessage(message)
 				else:
-					await interaction.followup.send("No formats have been enabled in this server. To add a format, use /add_format")
+					await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			else:
 				validation = await validateYDK(forcedFormat, ydk, serverId)
 				await interaction.followup.send(validation)
 		else:
-			await interaction.followup.send("Only .ydk files can be validated")
+			await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
 	else:
 		await interaction.response.send_message(result.getMessage())
 
@@ -348,13 +355,13 @@ async def get_banlist(interaction:discord.Interaction):
 		if forcedFormat == None:
 			supportedFormats = config.getSupportedFormats(serverId)
 			if len(supportedFormats)>0:
-				pagination = PaginationView("Select a format")
+				pagination = PaginationView(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT)
 				callback = FormatToDownloadBanlistCallback(serverId)
 				pagination.setup(supportedFormats, interaction, callback, None)
-				message = await interaction.followup.send("Please choose a format to download its banlist", view=pagination, wait=True, ephemeral=True)
+				message = await interaction.followup.send(Strings.BOT_MESSAGE_CHOOSE_A_FORMAT_TO_DOWNLOAD_BANLIST, view=pagination, wait=True, ephemeral=True)
 				callback.setMessage(message)
 			else:
-				await interaction.followup.send("No formats have been enabled in this server. To add a format, use /add_format")
+				await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 		else:
 			await interaction.followup.send(file=banlistToDiscordFile(banlistFile, forcedFormat))
 	else:
@@ -374,9 +381,9 @@ async def format_list(interaction:discord.Interaction):
 			formatsAsString = ""
 			for format in formats:
 				formatsAsString = "%s\n%s"%(formatsAsString, format)
-			await interaction.followup.send("These are all the supported formats in this server:\n%s" % formatsAsString)
+			await interaction.followup.send(Strings.BOT_MESSAGE_FORMAT_LIST % formatsAsString)
 		else:
-			await interaction.followup.send("No formats have been enabled in this server. To add a format, use /add_format")
+			await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 	else:
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 
@@ -388,7 +395,6 @@ async def register_for_league(interaction:discord.Interaction):
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
 	playerName = "%s#%s"%(interaction.user.name, interaction.user.discriminator)
-	print(playerName, flush=True)
 	channelName = getChannelName(interaction.channel)
 	result = canCommandExecute(interaction, False)
 	if not result.wasSuccessful():
@@ -397,7 +403,7 @@ async def register_for_league(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	result = manager.registerPlayer(playerId, playerName)
@@ -418,14 +424,14 @@ async def check_rating(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	result = manager.getRatingForPlayer(playerId)
 	if result == -1:
-		await interaction.followup.send("You are not registered in the %s league." % forcedFormat)
+		await interaction.followup.send(Strings.ERROR_MESSAGE_JOIN_LEAGUE_FIRST % forcedFormat)
 	else:
-		await interaction.followup.send("Your current rating in the %s league is %.2f"%(forcedFormat, result))
+		await interaction.followup.send(Strings.BOT_MESSAGE_YOUR_RATING_IS % (forcedFormat, result))
 
 @bot.tree.command(name="list_active_matches", description="Returns the full list of active matches.")
 async def list_active_matches(interaction:discord.Interaction):
@@ -441,19 +447,20 @@ async def list_active_matches(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	result = manager.getActiveMatches()
 	if len(result) == 0:
-		await interaction.followup.send("There are no active matches in the %s league" % forcedFormat)
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_ACTIVE_MATCHES_IN_LEAGUE % forcedFormat)
 	else:
 		results = ""
 		for activeMatch in result:
 			playerA = manager.getPlayerForId(activeMatch.player1)
 			playerB = manager.getPlayerForId(activeMatch.player2)
-			results = "%s\n%s (%.2f) vs %s (%.2f)" % (results, playerA.getPlayerName(), playerA.getPlayerScore(), playerB.getPlayerName(), playerB.getPlayerScore())
-		await interaction.followup.send("This is a list of all active matches in the %s league:\n%s"%(forcedFormat, results))
+			resultLine = Strings.BOT_MESSAGE_ACTIVE_MATCH_FORMAT % (playerA.getPlayerName(), playerA.getPlayerScore(), playerB.getPlayerName(), playerB.getPlayerScore())
+			results = "%s\n%s" % (results, resultLine)
+		await interaction.followup.send(Strings.BOT_MESSAGE_ACTIVE_MATCH_LIST % (forcedFormat, results))
 
 @bot.tree.command(name="get_active_match", description="Returns your active ranked match for this league if you have one.")
 async def get_active_match(interaction:discord.Interaction):
@@ -470,16 +477,16 @@ async def get_active_match(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	match = manager.getMatchForPlayer(playerId)
 	if match == None:
-		await interaction.followup.send("You have no active matches")
+		await interaction.followup.send(Strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
 	else:
 		player1 = manager.getPlayerForId(match.player1)
 		player2 = manager.getPlayerForId(match.player2)
-		response = "%s (%.2f) vs %s (%.2f)"%(player1.getPlayerName(), player1.getPlayerScore(), player2.getPlayerName(), player2.getPlayerScore())
+		response = Strings.BOT_MESSAGE_ACTIVE_MATCH_FORMAT % (player1.getPlayerName(), player1.getPlayerScore(), player2.getPlayerName(), player2.getPlayerScore())
 		await interaction.followup.send(response)
 
 @bot.tree.command(name="print_leaderboard", description="Returns the leaderboard for this league.")
@@ -496,12 +503,12 @@ async def print_leaderboard(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	leaderboard = manager.getLeaderboard()
 	if len(leaderboard) == 0:
-		await interaction.followup.send("There are no players registered for the %s league."%forcedFormat)
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_PLAYERS_JOINED_LEAGUE % forcedFormat)
 	else:
 		lb = ""
 		i = 1
@@ -525,17 +532,18 @@ async def join_queue(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	result = manager.joinQueue(playerId)
 	if result.wasSuccessful():
 		await interaction.followup.send(result.getMessage())
-		if result.hasExtras():
-			match = result.getExtras()
-			if match != None:
-				# A match has started! Notify the channel so it's public knowledge
-				await interaction.channel.send(result.getMessage())
+		activeMatch = manager.getMatchForPlayer(playerId)
+		if (activeMatch != None):
+			# A match has started! Notify the channel so it's public knowledge
+			await interaction.channel.send(result.getMessage())
+		else:
+			await interaction.channel.send(Strings.BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE)
 	else:
 		await interaction.followup.send(result.getMessage())
 
@@ -555,7 +563,7 @@ async def cancel_match(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
 	result = manager.cancelMatch(playerId)
@@ -566,10 +574,10 @@ async def cancel_match(interaction:discord.Interaction):
 	else:
 		await interaction.followup.send(result.getMessage())
 
-@bot.tree.command(name="notify_ranked_win", description="Notifies you won your ranked match.")
+@bot.tree.command(name="notify_ranked_loss", description="Notifies you lost your ranked match.")
 async def notify_ranked_win(interaction:discord.Interaction):
 
-	"""Notifies you won your ranked match."""
+	"""Notifies you lost your ranked match."""
 
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
@@ -581,10 +589,19 @@ async def notify_ranked_win(interaction:discord.Interaction):
 	await interaction.response.defer(ephemeral=True)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	if forcedFormat == None:
-		await interaction.followup.send("There is no format tied to this channel.")
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
 		return
 	manager = MatchmakingManager(forcedFormat, serverId)
-	result = manager.endMatch(playerId)
+	match = manager.getMatchForPlayer(playerId)
+	if match == None:
+		await interaction.followup.send(Strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
+		return
+	winnerId = 0
+	if match.player1 == playerId:
+		winnerId = match.player2
+	else:
+		winnerId = match.player1
+	result = manager.endMatch(winnerId)
 	if result.wasSuccessful():
 		await interaction.followup.send(result.getMessage())
 		# A match has concluded. Notify the channel so it's public knowledge.
@@ -612,7 +629,7 @@ async def update_format(interaction:discord.Interaction, format_name: str, lflis
 			break
 	
 	if not found:
-		await interaction.response.send_message("There's no format named %s. You can get a list of all installed formats with /format_list."%format_name)
+		await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMAT_FOR_NAME % format_name)
 		return
 
 	if result.wasSuccessful():
@@ -625,13 +642,13 @@ async def update_format(interaction:discord.Interaction, format_name: str, lflis
 			if result.wasSuccessful():
 				result = config.editSupportedFormat(format_name, decodedFileContent, serverId)
 				if result.wasSuccessful():
-					await interaction.followup.send("Your format was updated!")
+					await interaction.followup.send(Strings.BOT_MESSAGE_FORMAT_UPDATED)
 				else:
 					await interaction.followup.send(result.getMessage())
 			else:
 				await interaction.followup.send(result.getMessage())	
 		else:
-			await interaction.followup.send("The only supported banlist format is a .lflist.conf file")
+			await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_BANLIST_FORMAT)
 	else:
 		await interaction.response.send_message(result.getMessage())
 
@@ -654,7 +671,7 @@ async def remove_format(interaction:discord.Interaction, format_name: str):
 			break
 	
 	if not found:
-		await interaction.response.send_message("There's no format named %s. You can get a list of all installed formats with /format_list."%format_name)
+		await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMAT_FOR_NAME % format_name)
 		return
 
 	if result.wasSuccessful():
@@ -662,11 +679,212 @@ async def remove_format(interaction:discord.Interaction, format_name: str):
 		await interaction.response.defer(ephemeral=True)
 		result = config.removeFormat(format_name, serverId)
 		if result.wasSuccessful():
-			await interaction.followup.send("Format %s has been removed from the bot"%format_name)
+			await interaction.followup.send(Strings.BOT_MESSAGE_FORMAT_REMOVED % format_name)
 		else:
 			await interaction.followup.send(result.getMessage())	
 	else:
 		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="start_deck_collection", description="Starts deck collection for an event")
+async def start_deck_collection(interaction:discord.Interaction):
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	result = canCommandExecute(interaction, True)
+	if result.wasSuccessful():
+		await interaction.response.defer(ephemeral=True)
+		forcedFormat = config.getForcedFormat(channelName, serverId)
+		if forcedFormat != None:
+			deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+			result = deckCollectionManager.beginCollection()
+			await interaction.followup.send(result.getMessage())
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="end_deck_collection", description="Starts deck collection for an event")
+async def start_deck_collection(interaction:discord.Interaction):
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	result = canCommandExecute(interaction, True)
+	if result.wasSuccessful():
+		await interaction.response.defer(ephemeral=True)
+		forcedFormat = config.getForcedFormat(channelName, serverId)
+		if forcedFormat != None:
+			deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+			result = deckCollectionManager.endCollection()
+			await interaction.followup.send(result.getMessage())
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="submit_deck", description="Submits a deck in .ydk format for a tournament")
+async def submit_deck(interaction:discord.Interaction, ydk:discord.Attachment):
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, False)
+	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+			return
+		await interaction.response.defer(ephemeral=True)
+		if ydk.filename.endswith(".ydk"):
+			channelName = getChannelName(interaction.channel)
+			forcedFormat = config.getForcedFormat(channelName, serverId)
+			if forcedFormat == None:
+				await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
+			else:
+				banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
+				if config.isFormatSupported(forcedFormat, serverId):
+					ydkFile = await ydk.read()
+					ydkFile = ydkFile.decode("utf-8")
+					result = deckValidator.validateDeck(ydkFile, banlistFile)
+					if result.wasSuccessful():
+						deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+						playerName = "%s#%s"%(interaction.user.name, interaction.user.discriminator)
+						result = deckCollectionManager.addDeck(playerName, ydkFile)
+						await interaction.followup.send(result.getMessage())
+					else:
+						await interaction.followup.send(result.getMessage())
+		else:
+			await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="get_readable_decklist", description="Gets a decklist in readable form")
+async def get_readable_decklist(interaction:discord.Interaction, player_name:str):
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, True)
+	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+			return
+		await interaction.response.defer(ephemeral=True)
+		channelName = getChannelName(interaction.channel)
+		forcedFormat = config.getForcedFormat(channelName, serverId)
+		deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+		players = deckCollectionManager.getRegisteredPlayers()
+		found = False
+		for player in players:
+			if player_name.lower() in player.lower():
+				found=True
+				player_name = player
+				break
+		if not found:
+			await interaction.followup.send(Strings.ERROR_MESSAGE_NO_SUBMITTED_DECKLIST % player_name)
+			return
+		readableDecklist = deckCollectionManager.getReadableDecklistForPlayer(player_name)
+		readable = "Main deck:\n\n"
+		for card in readableDecklist.main:
+			cardName = cardCollection.getCardNameFromId(card.cardId)
+			readable = "%s%dx %s\n"%(readable, card.copies, cardName)
+		readable = "%s\nExtra Deck:\n\n" % readable
+		for card in readableDecklist.extra:
+			cardName = cardCollection.getCardNameFromId(card.cardId)
+			readable = "%s%dx %s\n"%(readable, card.copies, cardName)
+		readable = "%s\nSide Deck:\n\n" % readable
+		for card in readableDecklist.side:
+			cardName = cardCollection.getCardNameFromId(card.cardId)
+			readable = "%s%dx %s\n"%(readable, card.copies, cardName)
+		await interaction.followup.send(readable)
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="get_ydk_decklist", description="Gets a decklist as a YDK file")
+async def get_ydk_decklist(interaction:discord.Interaction, player_name:str):
+	serverId = interaction.guild_id
+	playerName = "%s#%s"%(interaction.user.name, interaction.user.discriminator)
+	result = canCommandExecute(interaction, True)
+	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+			return
+		await interaction.response.defer(ephemeral=True)
+		channelName = getChannelName(interaction.channel)
+		forcedFormat = config.getForcedFormat(channelName, serverId)
+		deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+		players = deckCollectionManager.getRegisteredPlayers()
+		found = False
+		for player in players:
+			if player_name.lower() in player.lower():
+				found=True
+				player_name = player
+				break
+		if not found:
+			await interaction.followup.send("%s doesn't have a submitted decklist"%player_name)
+			return
+		filename = deckCollectionManager.getDecklistForPlayer(player_name)
+		file = ydkToDiscordFile(filename, playerName)
+		await interaction.followup.send(file=file)
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name="help", description="Displays every command and its use")
+async def help(interaction:discord.Interaction):
+	result = canCommandExecute(interaction, False)
+	if result.wasSuccessful():
+		result = canCommandExecute(interaction, True)
+		if result.wasSuccessful():
+			filename = ADMIN_HELP_FILE
+		else:
+			filename = REGULAR_HELP_FILE
+		with open(filename) as file:
+			help = file.read()
+			await interaction.response.send_message(help, ephemeral=True)
+	else:
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+
+@bot.tree.command(name="force_loss", description="Declares a loser for a match. Admin only.")
+async def force_win(interaction:discord.Interaction, player_name:str):
+	result = canCommandExecute(interaction, True)
+	if not result.wasSuccessful():
+		interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+	if forcedFormat == None:
+		interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
+		return
+	
+	matchmakingManager = MatchmakingManager(forcedFormat, serverId)
+	playerId = matchmakingManager.getIdForPlayerName(player_name)
+	if playerId == -1:
+		interaction.followup.send(Strings.ERROR_MESSAGE_PLAYER_HASNT_JOINED_LEAGUE % player_name)
+		return
+	match = matchmakingManager.getMatchForPlayer(playerId)
+	if match == None:
+		interaction.followup.send(Strings.ERROR_MESSAGE_PLAYER_HAS_NO_MATCHES_PENDING % player_name)
+		return
+	winnerId = 0
+	if match.player1 == playerId:
+		winnerId = match.player2
+	else:
+		winnerId = match.player1
+	result = matchmakingManager.endMatch(winnerId)
+	if result.wasSuccessful():
+		await interaction.followup.send(result.getMessage())
+		# A match has concluded. Notify the channel so it's public knowledge.
+		await interaction.channel.send(result.getMessage())
+	matchmakingManager.endMatch()
+	
+@force_win.autocomplete("player_name")
+@get_ydk_decklist.autocomplete("player_name")
+@get_readable_decklist.autocomplete("player_name")
+async def player_autocomplete(interaction:discord.Interaction, current:str) -> list[app_commands.Choice[str]]:
+	choices:List[app_commands.Choice[str]] = []
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+	registeredPlayers = deckCollectionManager.getRegisteredPlayers()
+	for player in registeredPlayers:
+		if current.lower() in player.lower():
+			if len(choices) < 25:
+				choice = app_commands.Choice(name=player, value=player)
+				choices.append(choice)
+	return choices
+
 
 @tie_format_to_channel.autocomplete("format_name")
 @update_format.autocomplete("format_name")
@@ -674,10 +892,11 @@ async def remove_format(interaction:discord.Interaction, format_name: str):
 async def format_autocomplete(interaction:discord.Interaction, current:str) -> List[app_commands.Choice[str]]:
 	choices:List[app_commands.Choice[str]] = []
 	formats = config.getSupportedFormats(interaction.guild_id)
-	if len(formats) <= 25:
-		for format in formats:
-			choice = app_commands.Choice(name=format, value=format)
-			choices.append(choice)
+	for format in formats:
+		if current.lower() in format.lower():
+			if len(choices) < 25:
+				choice = app_commands.Choice(name=format, value=format)
+				choices.append(choice)
 	return choices
 
 @card.autocomplete("cardname")

@@ -2,3 +2,5 @@
 *.lflist.conf
 
 *.pyc
+*.ydk
+*.txt

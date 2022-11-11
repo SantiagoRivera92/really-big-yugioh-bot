@@ -1,4 +1,13 @@
 from src.utils import OperationResult
+import src.strings
+from typing import List
+
+MAIN_DECK_START = "#main"
+EXTRA_DECK_START = "#extra"
+SIDE_DECK_START = "!side"
+
+
+
 
 class Card:
 	def __init__(self, cardId, copies):
@@ -8,13 +17,19 @@ class Card:
 	def addCopy(self):
 		self.copies+=1
 
-class Ydk:
-	def __init__(self, ydkFile):
-		self.ydkFile = ydkFile.decode("utf-8").split('\r\n')
+class Deck:
+	def __init__(self, main:List[Card], extra, side):
+		self.main = main
+		self.extra = extra
+		self.side = side
 
-	def getDeck(self):
+class Ydk:
+	def __init__(self, ydkFile:str):
+		self.ydkFile = ydkFile.replace("\r", "").replace("\n\n", "\n")
+
+	def getCopies(self):
 		deck = []
-		for line in self.ydkFile:
+		for line in self.ydkFile.split("\n"):
 			found = False
 			if line.isdigit():
 				for card in deck:
@@ -27,6 +42,59 @@ class Ydk:
 
 		return deck
 
+	def getDeck(self):
+		mainDeck:List[Card] = []
+		sideDeck:List[Card] = []
+		extraDeck:List[Card] = []
+
+		countingMain = False
+		countingExtra = False
+		countingSide = False
+
+		for line in self.ydkFile.split("\n"):
+			a = line.isdigit()
+			if a:
+				if countingMain:
+					found = False
+					for card in mainDeck:
+						if card.cardId == line:
+							card.copies = card.copies + 1
+							found = True
+					if not found:
+						mainDeck.append(Card(line, 1))
+				if countingExtra:
+					found = False
+					for card in extraDeck:
+						if card.cardId == line:
+							card.copies = card.copies + 1
+							found = True
+					if not found:
+						extraDeck.append(Card(line, 1))
+				if countingSide:
+					found = False
+					for card in sideDeck:
+						if card.cardId == line:
+							card.copies = card.copies + 1
+							found = True
+					if not found:
+						sideDeck.append(Card(line, 1))
+
+
+			if line == MAIN_DECK_START:
+				countingMain = True
+				countingExtra = False
+				countingSide = False
+			elif line == EXTRA_DECK_START:
+				countingMain = False
+				countingExtra = True
+				countingSide = False
+			elif line == SIDE_DECK_START:
+				countingMain = False
+				countingExtra = False
+				countingSide = True 
+
+		return Deck(mainDeck, extraDeck, sideDeck)
+
 	def getYdkErrors(self):
 		maindeckCount = 0
 		extradeckCount = 0
@@ -35,14 +103,14 @@ class Ydk:
 		countingExtra = False
 		countingSide = False
 
-		for line in self.ydkFile:
+		for line in self.ydkFile.split("\n"):
 			a = line.isdigit()
 			b = line.startswith("#")
 			c = line.startswith("!")
 			d = len(line) == 0
 
 			if not (a or b or c or d):
-				return OperationResult(False, "Invalid line in ydk: %s"%line)
+				return OperationResult(False, src.strings.ERROR_YDK_INVALID_LINE % line)
 
 			if not (b or c or d):
 				if countingMain:
@@ -53,32 +121,30 @@ class Ydk:
 					sidedeckCount += 1
 
 
-			if line == mainDeckStart:
+			if line == MAIN_DECK_START:
 				countingMain = True
 				countingExtra = False
 				countingSide = False
-			elif line == extraDeckStart:
+			elif line == EXTRA_DECK_START:
 				countingMain = False
 				countingExtra = True
 				countingSide = False
-			elif line == sideDeckStart:
+			elif line == SIDE_DECK_START:
 				countingMain = False
 				countingExtra = False
 				countingSide = True 
 		
 		if maindeckCount < 40:
-			return OperationResult(False, "Main Deck has %d cards, minimum is 40"%maindeckCount)
+			return OperationResult(False, src.strings.ERROR_YDK_SMALL_MAIN_DECK % maindeckCount)
 		if maindeckCount > 60:
-			return OperationResult(False, "Main Deck has %d cards, maximum is 60"%maindeckCount)
+			return OperationResult(False, src.strings.ERROR_YDK_BIG_MAIN_DECK % maindeckCount)
 		if extradeckCount > 15:
-			return OperationResult(False, "Extra Deck has %d cards, maximum is 15"%extradeckCount)
+			return OperationResult(False, src.strings.ERROR_YDK_BIG_EXTRA_DECK % extradeckCount)
 		if sidedeckCount > 15:
-			return OperationResult(False, "Side Deck has %d cards, maximum is 15"%sidedeckCount)
+			return OperationResult(False, src.strings.ERROR_YDK_BIG_SIDE_DECK % sidedeckCount)
 		return OperationResult(True, "")
 
-mainDeckStart = "#main"
-extraDeckStart = "#extra"
-sideDeckStart = "!side"
+
 
 
 def errorMessagesToString(errorMessages):
@@ -96,7 +162,7 @@ class DeckValidator:
 	def __init__(self, cardCollection):
 		self.cardCollection = cardCollection
 
-	def validateDeck(self, ydkDeckList, banlistFile):
+	def validateDeck(self, ydkDeckList:str, banlistFile:str):
 		decklist = Ydk(ydkDeckList)
 		validation = decklist.getYdkErrors()
 		if (validation.wasSuccessful()):
@@ -105,41 +171,43 @@ class DeckValidator:
 
 		return validation
 
-
-	def validateAgainstBanlist(self, ydk, banlist):
+	def validateAgainstBanlist(self, ydk:Ydk, banlist:str):
 		banlistAsLines = banlist.split("\n")
-
 		errorMessages = []
 
-		for card in ydk.getDeck():
+		for card in ydk.getCopies():
 			cardName = self.cardCollection.getCardNameFromId(card.cardId)
 			found = False
 			for line in banlistAsLines:
 				if card.cardId in line:
 					# This is just a way of finding how many copies are legal of a given card. Not pretty but it works.
+					legality = line.split(" ")[1]
 					idCount = len(card.cardId)
-					line = line[idCount+1:idCount+2]
+					line = line[idCount+1 : idCount+2]
 					if line == "-":
 						line = "-1"
+					limit = 0
 					limit = int(line)
+					
+					
 					# Now we check whether the max number is less than 1 (which means illegal or forbidden) 
 					# or whether there's more copies of a card than the legal limit (4 copies of anything, 3 of a semi-limited, etc)
 					if limit < 1 or card.copies > limit:
 						if cardName == None:
-							errorMessages.append("Card with id %s doesn't seem to exist."%card.cardId)
+							errorMessages.append(src.strings.ERROR_YDK_NON_EXISTING_ID % card.cardId)
 						elif limit == -1:
-							errorMessages.append("%s is illegal in the format."%cardName)
+							errorMessages.append(src.strings.ERROR_YDK_ILLEGAL_CARD % cardName)
 						elif limit == 0:
-							errorMessages.append("%s is Forbidden."%cardName)
+							errorMessages.append(src.strings.ERROR_YDK_FORBIDDEN_CARD % cardName)
 						elif limit < card.copies:
-							errorMessages.append("You are running %d copies of %s, maximum is %d."%(card.copies, cardName, limit))
-					found = True
-					break
+							errorMessages.append(src.strings.ERROR_YDK_EXTRA_COPIES % (card.copies, cardName, limit))
+				found = True
+				break
 			if not found:
 				if cardName != None:
-					errorMessages.append("%s is not legal."%cardName)
+					errorMessages.append(src.strings.ERROR_YDK_ILLEGAL_CARD % cardName)
 				else:
-					errorMessages.append("Card with id %s is not legal or doesn't exist"%card.cardId)
+					errorMessages.append(src.strings.ERROR_YDK_NON_EXISTING_ID % card.cardId)
 
 		if len(errorMessages) == 0:
 			return OperationResult(True, "")

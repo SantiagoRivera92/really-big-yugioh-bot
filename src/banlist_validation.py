@@ -1,7 +1,8 @@
 from src.utils import OperationResult
+import src.strings
 
-whitelist = "$whitelist"
-blacklist = "$whitelist"
+WHITELIST = "$whitelist"
+BLACKLIST = "$blacklist"
 
 class BanlistValidator:
 
@@ -22,26 +23,26 @@ class BanlistValidator:
 
 				containsName = True 
 
-			elif line == whitelist:
+			elif line == WHITELIST:
 		
 				containsType = True
 				
-			elif line == blacklist:
+			elif line == BLACKLIST:
 
-				return OperationResult(False, "Blacklist banlists aren't supported yet")
+				return OperationResult(False, src.strings.ERROR_BANLIST_BLACKLIST_NOT_SUPPORTED)
 
 			elif len(line) > 0 and not line.startswith("#"):
 
 				firstChar = line[0]
 				if not firstChar.isdigit():
-					return OperationResult(False, "Line \"%s\" is invalid."%line)
+					return OperationResult(False, src.strings.ERROR_BANLIST_LINE_INVALID % line)
 
 				splitLine = line.split("--")
 				trueLine = splitLine[0].lstrip()
 				
 				split = trueLine.split(" ")
 				if len(split) < 2:
-					return OperationResult(False, "Line \"%s\" is invalid" % line)
+					return OperationResult(False, src.strings.ERROR_BANLIST_LINE_INVALID % line)
 					
 				cardId = split[0]
 				status = split[1]
@@ -53,15 +54,15 @@ class BanlistValidator:
 
 				if b:
 					if int(b) > 3:
-						return OperationResult(False, "Line \"%s\" is invalid, maximum amount of copies per card is 3." % line)
+						return OperationResult(False, src.strings.ERROR_BANLIST_MAX_COPIES_IS_THREE % line)
 
 				d = a and (b or c)
 
 				if not d:
-					return OperationResult(False, "Line \"%d\" is invalid." % line)
+					return OperationResult(False, src.strings.ERROR_BANLIST_LINE_INVALID % line)
 
 		if not containsName:
-			return OperationResult(False, "Banlist file doesn't contain a name. A .lflist.conf file is supposed to have a name with the syntax !name at the top of the file.")
+			return OperationResult(False, src.strings.ERROR_BANLIST_NO_NAME)
 		if not containsType:
-			return OperationResult(False, "Banlist file doesn't contain a type. A .lflist.conf file is supposed to have either $whitelist or $blacklist just below the name.")
+			return OperationResult(False, src.strings.ERROR_BANLIST_NO_TYPE)
 		return OperationResult(True, "")

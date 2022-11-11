@@ -2,47 +2,100 @@ import discord
 from discord import Embed
 from src.utils import getStatusInBanlist
 
+CARD_ID_KEY = 'id'
+CARD_NAME_KEY = 'name'
+CARD_TYPE_KEY = 'type'
+CARD_RACE_KEY = 'race'
+CARD_ATTRIBUTE_KEY = 'attribute'
+CARD_IMAGES_KEY = 'card_images'
+CARD_IMAGE_URL_KEY = 'image_url'
+CARD_LEVEL_KEY = 'level'
+CARD_ATK_KEY = 'atk'
+CARD_DEF_KEY = 'def'
+CARD_SCALE_KEY = 'scale'
+CARD_LINK_RATING_KEY = 'linkval'
+CARD_LINK_MARKERS_KEY = 'linkmarkers'
+CARD_DESC_KEY = 'desc'
+
+LINK_MARKER_TOP_LEFT = 'Top-Left'
+LINK_MARKER_TOP = 'Top'
+LINK_MARKER_TOP_RIGHT = 'Top-Right'
+LINK_MARKER_LEFT = 'Left'
+LINK_MARKER_RIGHT = 'Right'
+LINK_MARKER_BOTTOM_LEFT = 'Bottom-Left'
+LINK_MARKER_BOTTOM = 'Bottom'
+LINK_MARKER_BOTTOM_RIGHT = 'Bottom-Right'
+
+COLOR_DEFAULT = discord.Color.from_str("0x000000")
+COLOR_XYZ = discord.Color.from_str("0x0c1216")
+COLOR_SYNCHRO = discord.Color.from_str("0xcbcbcb")
+COLOR_FUSION = discord.Color.from_str("0x8968b9")
+COLOR_NORMAL = discord.Color.from_str("0xdccdc4")
+COLOR_RITUAL = color = discord.Color.from_str("0x3575a1")
+COLOR_LINK = discord.Color.from_str("0x1e6895")
+COLOR_EFFECT = discord.Color.from_str("0xa4633b")
+COLOR_SPELL = discord.Color.from_str("0x94c0af")
+COLOR_TRAP = discord.Color.from_str("0xdeb0cd")
+
+TYPE_MONSTER = "Monster"
+TYPE_SYNCHRO = "Synchro"
+TYPE_XYZ = "XYZ"
+TYPE_FUSION = "Fusion"
+TYPE_NORMAL = "Normal"
+TYPE_LINK = "Link"
+TYPE_RITUAL = "Ritual"
+TYPE_EFFECT = "Effect"
+TYPE_SPELL = "Spell"
+TYPE_TRAP = "Trap"
+TYPE_PENDULUM = "Pendulum"
+
+CARD_STATUS_ILLEGAL = 'Illegal'
+CARD_STATUS_FORBIDDEN = 'Forbidden'
+CARD_STATUS_LIMITED = 'Limited'
+CARD_STATUS_SEMI_LIMITED = 'Semi-Limited'
+CARD_STATUS_UNLIMITED = 'Unlimited'
+
 def cardToEmbed(card, banlistFile, formatName, bot):
 	
 	banlist = open(banlistFile).read()
 
-	cardId = card.get('id')
-	name = card.get('name')
-	cType = card.get('type')
-	race = card.get('race')
-	attribute = card.get('attribute')
-	imageUrl = card.get('card_images')[0].get('image_url')
-	level =card.get('level')
-	attack = card.get('atk')
-	defense = card.get('def')
-	scale = card.get('scale')
-	linkval = card.get('linkval')
+	cardId = card.get(CARD_ID_KEY)
+	name = card.get(CARD_NAME_KEY)
+	cType = card.get(CARD_TYPE_KEY)
+	race = card.get(CARD_RACE_KEY)
+	attribute = card.get(CARD_ATTRIBUTE_KEY)
+	imageUrl = card.get(CARD_IMAGES_KEY)[0].get(CARD_IMAGE_URL_KEY)
+	level =card.get(CARD_LEVEL_KEY)
+	attack = card.get(CARD_ATK_KEY)
+	defense = card.get(CARD_DEF_KEY)
+	scale = card.get(CARD_SCALE_KEY)
+	linkval = card.get(CARD_LINK_RATING_KEY)
 
-	color = discord.Color.from_str("0x000000")
+	color = COLOR_DEFAULT
 
 	cardType = ""
-	if ("Monster" in cType):
-		cardType = "Monster"
-		if "XYZ" in cType:
-			color = discord.Color.from_str("0x0c1216")
-		elif "Synchro" in cType:
-			color = discord.Color.from_str("0xcbcbcb")
-		elif "Fusion" in cType:
-			color = discord.Color.from_str("0x8968b9")
-		elif "Normal" in cType:
-			color = discord.Color.from_str("0xdccdc4")
-		elif "Link" in cType:
-			color = discord.Color.from_str("0x1e6895")
-		elif "Ritual" in cType:
-			color = discord.Color.from_str("0x3575a1")
+	if (TYPE_MONSTER in cType):
+		cardType = TYPE_MONSTER
+		if TYPE_XYZ in cType:
+			color = COLOR_XYZ
+		elif TYPE_SYNCHRO in cType:
+			color = COLOR_SYNCHRO
+		elif TYPE_FUSION in cType:
+			color = COLOR_FUSION
+		elif TYPE_NORMAL in cType:
+			color = COLOR_NORMAL
+		elif TYPE_LINK in cType:
+			color = COLOR_LINK
+		elif TYPE_RITUAL in cType:
+			color = COLOR_RITUAL
 		else:
-			color = discord.Color.from_str("0xa4633b")
-	elif ("Spell" in cType):
-		cardType = "Spell"
-		color = discord.Color.from_str("0x94c0af")
-	elif ("Trap" in cType):
-		cardType = "Trap"
-		color = discord.Color.from_str("0xdeb0cd")
+			color = COLOR_EFFECT
+	elif (TYPE_SPELL in cType):
+		cardType = TYPE_SPELL
+		color = COLOR_SPELL
+	elif (TYPE_TRAP in cType):
+		cardType = TYPE_TRAP
+		color = COLOR_TRAP
 
 
 	embed = Embed(title=name, color=color)
@@ -52,8 +105,8 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 	status = getStatusInBanlist(cardId, banlist)
 	statusAsString = getStatusAsString(status)
 	embed.add_field(name="Status (%s):"%formatName, value=statusAsString)
-	if (cardType == "Monster"):
-		if not "Normal" in cType:
+	if (cardType == TYPE_MONSTER):
+		if not TYPE_NORMAL in cType:
 			formattedType = cType.replace(" Monster", "")
 			if " " in formattedType:
 				formattedType = formattedType.replace(" Effect", "")
@@ -61,9 +114,9 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 			formattedCardType = "%s / %s / %s"%(attribute, race, formattedType)
 		else:
 			formattedCardType = "%s / %s"%(attribute, race)
-		if "XYZ" in cType:
+		if TYPE_XYZ in cType:
 			embed.add_field(name="Rank", value=level)
-		elif not "Link" in cType:
+		elif not TYPE_LINK in cType:
 			embed.add_field(name="Level", value=level)
 		embed.add_field(name="Card type", value=formattedCardType, inline=True)
 	else:
@@ -72,8 +125,8 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 		embed.add_field(name="Type", value=formattedCardType, inline=True)
 
 	embed.add_field(name="Card effect", value=formatDesc(card),inline=False)
-	if (cardType == "Monster"):
-		if "Link" in cType:
+	if (cardType == TYPE_MONSTER):
+		if TYPE_LINK in cType:
 			embed.add_field(name="ATK", value=attack)
 			embed.add_field(name="Link Rating", value=linkval)
 			embed.add_field(name="Link Arrows", value=getArrows(card))
@@ -90,16 +143,16 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 					stats = "%d / %d"%(attack, defense)
 			embed.add_field(name="Stats", value=stats)
 		
-		if "Pendulum" in cType:
+		if TYPE_PENDULUM in cType:
 			embed.add_field(name="Scale", value=scale)
 
 	return embed
 
 def formatDesc(card):
-	cardDesc = card.get('desc')
+	cardDesc = card.get(CARD_DESC_KEY)
 
-	cardName = "\"%s\""%card.get('name')
-	pluralCardName = "\"%s(s)\""%card.get('name')
+	cardName = "\"%s\""%card.get(CARD_NAME_KEY)
+	pluralCardName = "\"%s(s)\""%card.get(CARD_NAME_KEY)
 	cardDesc = cardDesc.replace(cardName, "$cardname$")
 	cardDesc = cardDesc.replace(pluralCardName, "$cardnameplural$")
 
@@ -174,34 +227,34 @@ def formatDesc(card):
 	return cardDesc
 
 def getArrows(card):
-	linkmarkers = card.get('linkmarkers')
+	linkmarkers = card.get(CARD_LINK_MARKERS_KEY)
 	emoji = ""
 	for arrow in linkmarkers:
-		if (arrow == "Top-Left"):
+		if (arrow == LINK_MARKER_TOP_LEFT):
 			emoji = "%s%s"%(emoji, "↖")
-		if (arrow == "Top"):
+		if (arrow == LINK_MARKER_TOP):
 			emoji = "%s%s"%(emoji, "⬆")
-		if (arrow == "Top-Right"):
+		if (arrow == LINK_MARKER_TOP_RIGHT):
 			emoji = "%s%s"%(emoji, "↗")
-		if (arrow == "Left"):
+		if (arrow == LINK_MARKER_LEFT):
 			emoji = "%s%s"%(emoji, "⬅")
-		if (arrow == "Right"):
+		if (arrow == LINK_MARKER_RIGHT):
 			emoji = "%s%s"%(emoji, "➡")
-		if (arrow == "Bottom-Left"):
+		if (arrow == LINK_MARKER_BOTTOM_LEFT):
 			emoji = "%s%s"%(emoji, "↙")
-		if (arrow == "Bottom"):
+		if (arrow == LINK_MARKER_BOTTOM):
 			emoji = "%s%s"%(emoji, "⬇")
-		if (arrow == "Bottom-Right"):
+		if (arrow == LINK_MARKER_BOTTOM_RIGHT):
 			emoji = "%s%s"%(emoji, "↘")
 	return emoji
 
 def getStatusAsString(status):
 	if (status == -1):
-		return "Illegal"
+		return CARD_STATUS_ILLEGAL
 	if (status == 0):
-		return "Forbidden"
+		return CARD_STATUS_FORBIDDEN
 	if (status == 1):
-		return "Limited"
+		return CARD_STATUS_LIMITED
 	if (status == 2):
-		return "Semi-Limited"
-	return "Unlimited"
+		return CARD_STATUS_SEMI_LIMITED
+	return CARD_STATUS_UNLIMITED
