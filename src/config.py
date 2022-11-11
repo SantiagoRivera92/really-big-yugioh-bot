@@ -3,7 +3,7 @@ import os
 from src.banlist_generation import BanlistGenerator
 from src.utils import OperationResult
 from typing import List
-import src.strings
+import src.strings as Strings
 
 SUPPORTED_FORMATS_KEY = 'supported_formats'
 SANITIZED_NAMES_KEY = 'sanitized_format_names'
@@ -53,7 +53,7 @@ class Config:
 		
 		for format in supportedFormats:
 			if format.lower() == formatName.lower():
-				return OperationResult(False, src.strings.ERROR_CONFIG_FORMAT_ALREADY_EXISTS % formatName)
+				return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_ALREADY_EXISTS % formatName)
 
 		
 		result = self.banlistGenerator.writeBanlist(formatName, lflistFile, serverId)
@@ -83,7 +83,7 @@ class Config:
 				forcedFormat = format
 		
 		if not found:
-			return OperationResult(False, src.strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % formatName)
+			return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % formatName)
 		
 		result = self.banlistGenerator.writeBanlist(forcedFormat, lflistFile, serverId)
 		return result
@@ -100,7 +100,7 @@ class Config:
 				forcedFormat = format
 		
 		if not found:
-			return OperationResult(False, src.strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % oldName)
+			return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % oldName)
 		
 		supportedFormats.remove(forcedFormat)
 		supportedFormats.add(newName)
@@ -133,7 +133,7 @@ class Config:
 				forcedFormat = format
 		
 		if not found:
-			return OperationResult(False, src.strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % forcedFormat)
+			return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % forcedFormat)
 
 		newBanlistFiles = []
 
@@ -178,7 +178,7 @@ class Config:
 			self.saveConfigForServer(config, serverId)
 			return OperationResult(True, "")
 		else:
-			return OperationResult(False, src.strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % formatName)
+			return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % formatName)
 
 	def getBanlistForFormat(self, formatName, serverId) -> str:
 		config = self.getConfigForServer(serverId)
@@ -188,10 +188,10 @@ class Config:
 
 	def isChannelEnabled(self, channelName, serverId):
 		if channelName == GROUP_CHANNEL_KEY or channelName == THREAD_CHANNEL_KEY:
-			return OperationResult(False, src.strings.ERROR_CONFIG_GROUPS_AND_THREADS)
+			return OperationResult(False, Strings.ERROR_CONFIG_GROUPS_AND_THREADS)
 		for disabledChannel in self.getDisabledChannels(serverId):
 			if disabledChannel == channelName:
-				return OperationResult(False, src.strings.ERROR_CONFIG_DISABLED_CHANNEL)
+				return OperationResult(False, Strings.ERROR_CONFIG_DISABLED_CHANNEL)
 		return OperationResult(True, "")
 
 	def getForcedFormat(self, channelName, serverId):

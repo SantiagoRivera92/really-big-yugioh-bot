@@ -1,5 +1,5 @@
 from src.utils import OperationResult
-import src.strings
+import src.strings as Strings
 from typing import List
 
 MAIN_DECK_START = "#main"
@@ -110,7 +110,7 @@ class Ydk:
 			d = len(line) == 0
 
 			if not (a or b or c or d):
-				return OperationResult(False, src.strings.ERROR_YDK_INVALID_LINE % line)
+				return OperationResult(False, Strings.ERROR_YDK_INVALID_LINE % line)
 
 			if not (b or c or d):
 				if countingMain:
@@ -135,13 +135,13 @@ class Ydk:
 				countingSide = True 
 		
 		if maindeckCount < 40:
-			return OperationResult(False, src.strings.ERROR_YDK_SMALL_MAIN_DECK % maindeckCount)
+			return OperationResult(False, Strings.ERROR_YDK_SMALL_MAIN_DECK % maindeckCount)
 		if maindeckCount > 60:
-			return OperationResult(False, src.strings.ERROR_YDK_BIG_MAIN_DECK % maindeckCount)
+			return OperationResult(False, Strings.ERROR_YDK_BIG_MAIN_DECK % maindeckCount)
 		if extradeckCount > 15:
-			return OperationResult(False, src.strings.ERROR_YDK_BIG_EXTRA_DECK % extradeckCount)
+			return OperationResult(False, Strings.ERROR_YDK_BIG_EXTRA_DECK % extradeckCount)
 		if sidedeckCount > 15:
-			return OperationResult(False, src.strings.ERROR_YDK_BIG_SIDE_DECK % sidedeckCount)
+			return OperationResult(False, Strings.ERROR_YDK_BIG_SIDE_DECK % sidedeckCount)
 		return OperationResult(True, "")
 
 
@@ -194,20 +194,20 @@ class DeckValidator:
 					# or whether there's more copies of a card than the legal limit (4 copies of anything, 3 of a semi-limited, etc)
 					if limit < 1 or card.copies > limit:
 						if cardName == None:
-							errorMessages.append(src.strings.ERROR_YDK_NON_EXISTING_ID % card.cardId)
+							errorMessages.append(Strings.ERROR_YDK_NON_EXISTING_ID % card.cardId)
 						elif limit == -1:
-							errorMessages.append(src.strings.ERROR_YDK_ILLEGAL_CARD % cardName)
+							errorMessages.append(Strings.ERROR_YDK_ILLEGAL_CARD % cardName)
 						elif limit == 0:
-							errorMessages.append(src.strings.ERROR_YDK_FORBIDDEN_CARD % cardName)
+							errorMessages.append(Strings.ERROR_YDK_FORBIDDEN_CARD % cardName)
 						elif limit < card.copies:
-							errorMessages.append(src.strings.ERROR_YDK_EXTRA_COPIES % (card.copies, cardName, limit))
+							errorMessages.append(Strings.ERROR_YDK_EXTRA_COPIES % (card.copies, cardName, limit))
 				found = True
 				break
 			if not found:
 				if cardName != None:
-					errorMessages.append(src.strings.ERROR_YDK_ILLEGAL_CARD % cardName)
+					errorMessages.append(Strings.ERROR_YDK_ILLEGAL_CARD % cardName)
 				else:
-					errorMessages.append(src.strings.ERROR_YDK_NON_EXISTING_ID % card.cardId)
+					errorMessages.append(Strings.ERROR_YDK_NON_EXISTING_ID % card.cardId)
 
 		if len(errorMessages) == 0:
 			return OperationResult(True, "")

@@ -1,6 +1,6 @@
 import json
 from src.utils import OperationResult
-import src.strings
+import src.strings as Strings
 
 class ServerConfig:
 
@@ -13,4 +13,4 @@ class ServerConfig:
         if serverId in serverList:
             return OperationResult(True, "")
         
-        return OperationResult(False, src.strings.ERROR_PAY_ME_MONEY % serverId)
+        return OperationResult(False, Strings.ERROR_PAY_ME_MONEY % serverId)

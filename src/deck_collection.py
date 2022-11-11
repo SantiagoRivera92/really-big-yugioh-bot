@@ -2,8 +2,8 @@ import os
 import json
 from typing import List
 from src.utils import OperationResult
-from src.deck_validation import Ydk, Card
-import src.strings
+from src.deck_validation import Ydk
+import src.strings as Strings
 
 FOLDER_NAME = "./json/deckcollection/%d/%s/"
 COLLECTION_FILE_NAME = "./json/deckcollection/%d/%s/collection.json"
@@ -64,7 +64,7 @@ class DeckCollection:
 
     def addDeck(self, playerName:str, deck:str):
         if not self.collectionEnabled:
-            return OperationResult(False, src.strings.ERROR_DECK_COLLECTION_SUBMISSION_DISABLED)
+            return OperationResult(False, Strings.ERROR_DECK_COLLECTION_SUBMISSION_DISABLED)
         deckFileName = DECK_FILE_NAME%(self.serverId, self.formatName, playerName)
         folderName = DECKS_FOLDER_NAME%(self.serverId, self.formatName)
         if not os.path.exists(folderName):
@@ -85,7 +85,7 @@ class DeckCollection:
         newDecks.append(deck)
         self.decks = newDecks
         self.save()
-        return OperationResult(True, src.strings.MESSAGE_DECK_COLLECTION_SUBMISSION_SUCCESSFUL)
+        return OperationResult(True, Strings.MESSAGE_DECK_COLLECTION_SUBMISSION_SUCCESSFUL)
         
     def clearDecks(self):
         for deck in self.decks:
@@ -94,23 +94,23 @@ class DeckCollection:
                 os.remove(filename)
         self.decks = []
         self.save()
-        return OperationResult(True, src.strings.MESSAGE_DECK_COLLECTION_CLEAR_SUCCESSFUL)
+        return OperationResult(True, Strings.MESSAGE_DECK_COLLECTION_CLEAR_SUCCESSFUL)
 
     def enableDeckCollection(self):
         if not self.collectionEnabled:
             self.collectionEnabled = True
             self.save()
-            return OperationResult(True, src.strings.MESSAGE_DECK_COLLECTION_ENABLED)
+            return OperationResult(True, Strings.MESSAGE_DECK_COLLECTION_ENABLED)
         else:
-            return OperationResult(False, src.strings.ERROR_DECK_COLLECTION_ALREADY_ENABLED)
+            return OperationResult(False, Strings.ERROR_DECK_COLLECTION_ALREADY_ENABLED)
 
     def disableDeckCollection(self):
         if self.collectionEnabled:
             self.collectionEnabled = False
             self.save()
-            return OperationResult(True, src.strings.MESSAGE_DECK_COLLECTION_DISABLED)
+            return OperationResult(True, Strings.MESSAGE_DECK_COLLECTION_DISABLED)
         else:
-            return OperationResult(False, src.strings.ERROR_DECK_COLLECTION_ALREADY_DISABLED)
+            return OperationResult(False, Strings.ERROR_DECK_COLLECTION_ALREADY_DISABLED)
 
     def getDefaultDeckCollectionContent(self):
         collection = {}

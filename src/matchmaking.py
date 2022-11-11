@@ -4,7 +4,7 @@ import time
 from typing import List
 from src.utils import OperationResult
 from src.elo import Elo
-import src.strings
+import src.strings as Strings
 
 ELO_FILE_NAME = "./json/elo/%d/%s/elo.json"
 FOLDER_NAME = "./json/elo/%d/%s"
@@ -172,12 +172,12 @@ class Matchmaking:
             # Update username just in case
             registeredPlayer.setPlayerName(playerName)
             self.save()
-            return OperationResult(False, src.strings.ERROR_MATCHMAKING_USER_ALREADY_REGISTERED % (playerId, self.formatName))
+            return OperationResult(False, Strings.ERROR_MATCHMAKING_USER_ALREADY_REGISTERED % (playerId, self.formatName))
         else:
             registeredPlayer = Player(playerId, playerName, 1000)
             self.players.append(registeredPlayer)
             self.save()
-            return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_USER_REGISTERED % (playerId, self.formatName))
+            return OperationResult(True, Strings.MESSAGE_MATCHMAKING_USER_REGISTERED % (playerId, self.formatName))
 
     def joinQueue(self, playerId: int):
         player = self.getPlayerForId(playerId)
@@ -187,23 +187,23 @@ class Matchmaking:
                 # Create a queue
                 self.queue = Queue(player)
                 self.save()
-                return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_JOINED_QUEUE)
+                return OperationResult(True, Strings.MESSAGE_MATCHMAKING_JOINED_QUEUE)
             else:
                 # Is this the same player?
                 if playerId == self.queue.player.getPlayerId():
-                    result = OperationResult(False, src.strings.ERROR_MATCHMAKING_ALREADY_IN_QUEUE)
+                    result = OperationResult(False, Strings.ERROR_MATCHMAKING_ALREADY_IN_QUEUE)
                     return result
                 else:
                 # Start a match
                     match = ActiveMatch(currentQueue.player.getPlayerId(), player.getPlayerId())
-                    result = OperationResult(True, src.strings.MESSAGE_MATCHMAKING_MATCH_STARTED % (self.formatName, currentQueue.player.getPlayerId(), player.getPlayerId()))
+                    result = OperationResult(True, Strings.MESSAGE_MATCHMAKING_MATCH_STARTED % (self.formatName, currentQueue.player.getPlayerId(), player.getPlayerId()))
                     result.addExtras(match)
                     self.queue = None
                     self.activeMatches.append(match)
                     self.save()
                     return result
         else:
-            return OperationResult(False, src.strings.ERROR_MATCHMAKING_REGISTER_FIRST)
+            return OperationResult(False, Strings.ERROR_MATCHMAKING_REGISTER_FIRST)
 
     def cancelMatch(self, playerId: int):
         match = self.getMatchForPlayer(playerId)
@@ -211,11 +211,11 @@ class Matchmaking:
             self.activeMatches.remove(match)
             self.save()
             if match.player1 == playerId:
-                return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_MATCH_CANCELLED % (match.player1, match.player1, match.player1))
+                return OperationResult(True, Strings.MESSAGE_MATCHMAKING_MATCH_CANCELLED % (match.player1, match.player1, match.player1))
             else:
-                return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_MATCH_CANCELLED % (match.player1, match.player2, match.player2))
+                return OperationResult(True, Strings.MESSAGE_MATCHMAKING_MATCH_CANCELLED % (match.player1, match.player2, match.player2))
         else:
-            return OperationResult(False, src.strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
+            return OperationResult(False, Strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
 
 
     def startMatch(self, player1:int, player2:int):
@@ -254,17 +254,17 @@ class Matchmaking:
             loser.setScore(elo.getLoserUpdatedScore())
             self.activeMatches.remove(match)
             self.save()
-            return OperationResult(True, src.strings.MESSAGE_MATCHMAKING_WON_ELO_UPDATED % (winner.getPlayerId(), winnerScore, elo.getWinnerUpdatedScore(), loser.getPlayerId(), loserScore, elo.getLoserUpdatedScore()))
+            return OperationResult(True, Strings.MESSAGE_MATCHMAKING_WON_ELO_UPDATED % (winner.getPlayerId(), winnerScore, elo.getWinnerUpdatedScore(), loser.getPlayerId(), loserScore, elo.getLoserUpdatedScore()))
         else:
-            return OperationResult(False, src.strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
+            return OperationResult(False, Strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
 
     def isNewMatchValid(self, player1:int, player2:int):
         playerIds = [player1, player2]
         for match in self.activeMatches:
             if match.player1 in playerIds:
-                return OperationResult(False, src.strings.ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS % player1)
+                return OperationResult(False, Strings.ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS % player1)
             if match.player2 in playerIds:
-                return OperationResult(False, src.strings.ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS % player2)
+                return OperationResult(False, Strings.ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS % player2)
         return OperationResult(True, "")
 
     def getScoreForPlayer(self, userId:int):

@@ -1,6 +1,6 @@
 import math
 import discord
-import src.strings
+import src.strings as Strings
 from discord import app_commands
 
 DM_CHANNEL_KEY = "dm"
@@ -60,11 +60,11 @@ def getChannelName(channel:discord.channel):
 
 def isValidFilename(filename:str):
 	if len(filename) == 0:
-		return OperationResult(False, src.strings.ERROR_FORMAT_NAME_EMPTY)
+		return OperationResult(False, Strings.ERROR_FORMAT_NAME_EMPTY)
 	invalidCharacters = "#%&\{\}\\<>*?/$!\'\":@+`|="
 	for char in invalidCharacters:
 		if char in filename:
-			return OperationResult(False, src.strings.ERROR_FORMAT_NAME_INVALID_CHARACTER % char)
+			return OperationResult(False, Strings.ERROR_FORMAT_NAME_INVALID_CHARACTER % char)
 	return OperationResult(True, "")
 
 class MyClient(discord.Client):
