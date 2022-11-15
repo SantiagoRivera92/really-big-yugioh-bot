@@ -4,6 +4,7 @@ import src.strings as Strings
 WHITELIST = "$whitelist"
 BLACKLIST = "$blacklist"
 
+
 class BanlistValidator:
 
 	def validateBanlist(self, decodedBanlist):
@@ -19,19 +20,19 @@ class BanlistValidator:
 		containsType = False
 
 		for line in banlistAsLines:
-			if line.startswith('!'):
+			if line.startswith('!') or line.startswith('['):
 
-				containsName = True 
+				containsName = True
 
 			elif line == WHITELIST:
-		
+
 				containsType = True
-				
+
 			elif line == BLACKLIST:
 
 				return OperationResult(False, Strings.ERROR_BANLIST_BLACKLIST_NOT_SUPPORTED)
 
-			elif len(line) > 0 and not line.startswith("#"):
+			elif len(line) > 0 and not (line.startswith("#") or line.startswith("!") or line.startswith("[")):
 
 				firstChar = line[0]
 				if not firstChar.isdigit():
@@ -39,11 +40,11 @@ class BanlistValidator:
 
 				splitLine = line.split("--")
 				trueLine = splitLine[0].lstrip()
-				
+
 				split = trueLine.split(" ")
 				if len(split) < 2:
 					return OperationResult(False, Strings.ERROR_BANLIST_LINE_INVALID % line)
-					
+
 				cardId = split[0]
 				status = split[1]
 

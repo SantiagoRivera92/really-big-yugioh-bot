@@ -15,7 +15,6 @@ DISABLED_CHANNELS_KEY = 'disabled_channels'
 NAME_KEY = 'name'
 FILENAME_KEY = 'filename'
 CHANNEL_NAME_KEY = 'channel_name'
-USE_DEFAULT_FORMAT_KEY = 'use_default_format'
 DEFAULT_FORMAT_KEY = 'default_format'
 
 DM_CHANNEL_KEY = 'dm'
@@ -29,6 +28,9 @@ DEFAULT_CONFIG_FILE_NAME = "./json/default.json"
 class Config:
 	def __init__(self, cardCollection):
 		self.banlistGenerator = BanlistGenerator(cardCollection)
+
+	def changeStatus(self, formatName, serverId, cardId, cardName, status):
+		return self.banlistGenerator.fixBanlist(formatName, serverId, cardId, cardName, status)
 
 	def getConfigForServer(self, serverId):
 		serverFilename = FILE_NAME % serverId
@@ -46,6 +48,22 @@ class Config:
 	def saveConfigForServer(self, config, serverId):
 		with open(FILE_NAME%serverId, 'w') as conf:
 			json.dump(config, conf, indent=4)
+		
+	def setDefaultFormatForServer(self, formatName, serverId):
+		config = self.getConfigForServer(serverId)
+		supportedFormats = config.get(SUPPORTED_FORMATS_KEY)
+		found = False
+		forcedFormat = ""
+		for format in supportedFormats:
+			if format.lower() == formatName.lower():
+				found=True
+				forcedFormat = format
+		if not found:
+			return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % formatName)
+		config[DEFAULT_FORMAT_KEY] = forcedFormat
+		self.saveConfigForServer(config, serverId)
+		return OperationResult(True, Strings.MESSAGE_CONFIG_DEFAULT_FORMAT_SET % formatName)
+
 
 	def addSupportedFormat(self, formatName, lflistFile, serverId):
 		config = self.getConfigForServer(serverId)
@@ -173,10 +191,9 @@ class Config:
 				newConfig = {}
 				newConfig[CHANNEL_NAME_KEY] = channelName
 				newConfig[NAME_KEY] = formatName
-				newConfig[USE_DEFAULT_FORMAT_KEY] = False
 				channelConfig.append(newConfig)
 			self.saveConfigForServer(config, serverId)
-			return OperationResult(True, "")
+			return OperationResult(True, Strings.BOT_MESSAGE_FORMAT_TIED % (formatName, channelName))
 		else:
 			return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % formatName)
 
@@ -204,10 +221,14 @@ class Config:
 			if channelConfig.get(CHANNEL_NAME_KEY) == channelName:
 				if channelConfig.get(NAME_KEY) != None:
 					return channelConfig.get(NAME_KEY)
-				elif channelConfig.get(USE_DEFAULT_FORMAT_KEY):
-					return defaultFormat
 				else:
 					return None
+
+		if defaultFormat == None:
+			supportedFormats = self.getSupportedFormats(serverId)
+			if len(supportedFormats) == 1:
+				return supportedFormats[0]
+
 		return defaultFormat
 
 

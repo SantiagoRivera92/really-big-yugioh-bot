@@ -1,4 +1,5 @@
 import discord
+import json
 from discord import Embed
 from src.utils import getStatusInBanlist
 
@@ -54,6 +55,15 @@ CARD_STATUS_FORBIDDEN = 'Forbidden'
 CARD_STATUS_LIMITED = 'Limited'
 CARD_STATUS_SEMI_LIMITED = 'Semi-Limited'
 CARD_STATUS_UNLIMITED = 'Unlimited'
+
+REPLACE_LIST_FILENAME = "./json/cardembed/replace.json"
+SUFFIX_LIST_FILENAME = "./json/cardembed/suffix.json"
+PUNCTUATION_LIST_FILENAME = "./json/cardembed/punctuation.json"
+ALIAS_LIST_FILENAME = "./json/cardembed/alias.json"
+ALIAS_CLEANUP_LIST_FILENAME = "./json/cardembed/cleanup.json"
+
+ALIAS_BEFORE_KEY = "before"
+ALIAS_AFTER_KEY = "after"
 
 def cardToEmbed(card, banlistFile, formatName, bot):
 	
@@ -165,34 +175,25 @@ def formatDesc(card):
 	while "\n\n**Monster Effect**" in cardDesc:
 		cardDesc = cardDesc.replace("\n\n**Monster Effect**", "\n**Monster Effect**")
 	cardDesc = cardDesc.replace("\n**Monster Effect**", "\n\n**Monster Effect**")
-
-	replaceList = [
-		"Summon", "Set", "Destroy", "destroy", "Discard", "discard", "Send", 
-		"send", "Sent", "sent", "Banish", "banish","Normal", "Tribute", "Special",
-		"Fusion", "Ritual", "Synchro", "XYZ", "Pendulum", "Monster", "monster",
-		"Spell", "Trap", "Card", "(Quick Effect)", "Target", "target", "Material",
-		"material", "Level", "Detach", "detach", "Draw Phase", "Standby Phase",
-		"Battle Phase", "Main Phase", "End Phase", "Once per turn", 
-		"once per turn","Twice per turn", "twice per turn", "Thrice per turn", 
-		"thrice per turn","Once per Chain", "once per Chain", "during either player's turn",
-		"You can only activate this effect", "You can only activate each effect",
-		"You can only use this effect", "You can only use each effect", "This effect",
-		"The effect of", "can only be activated", "can only be used", "Attack Position",
-		"Defense Position", "face-down", "Face-down", "FLIP", "Graveyard", "GY", "Deck",
-		"Continuous", "Quick-Play", "Equip " "Equipped", "face-up", "Counter", "Xyz", "activated",
-		"Aqua", "Beast", "Warrior", "Cyberse", "Dinosaur", "Divine-Beast", "Dragon",
-		"Fairy", "Fiend", "Fish", "Insect", "Machine", "Plant", "Psychic", "Pyro", "Reptile",
-		"Rock", "Sea-Serpent", "Thunder" , "Winged Beast", "Wyrm", "Zombie",
-		"DARK", "LIGHT", "WATER", "FIRE", "EARTH", "WIND", "DIVINE","ATK","DEF","controller", "owner", 
-		"Remove from play", "Removed from play"]
+	replaceList = []
+	suffixList = []
+	punctuationList = []
+	aliasList = []
+	cleanupList = []
+	with open(REPLACE_LIST_FILENAME) as file:
+		replaceList = json.load(file)
+	with open(PUNCTUATION_LIST_FILENAME) as file:
+		punctuationList = json.load(file)
+	with open(SUFFIX_LIST_FILENAME) as file:
+		suffixList = json.load(file)
+	with open(ALIAS_LIST_FILENAME) as file:
+		aliasList = json.load(file)
+	with open(ALIAS_CLEANUP_LIST_FILENAME) as file:
+		cleanupList = json.load(file)
 
 	for termToReplace in replaceList:
 		replacement = "**%s**"%termToReplace
 		cardDesc = cardDesc.replace(termToReplace, replacement)
-
-
-	suffixList = ["s", "/s", "(s)", "ed", "d", "ing"]
-	punctuationList = [";", " ", ".", ":", ",", "\n"]
 
 	for suffix in suffixList:
 		for punctuation in punctuationList:
@@ -200,17 +201,8 @@ def formatDesc(card):
 			after = "%s%s**"%(suffix, punctuation)
 			cardDesc = cardDesc.replace(before, after)
 
-	cardDesc = cardDesc.replace("**Main Phase** 1", "**Main Phase 1**")
-	cardDesc = cardDesc.replace("**Main Phase** 2", "**Main Phase 2**")
-
-	cardDesc = cardDesc.replace(";", "**;**")
-	cardDesc = cardDesc.replace(":", "**:**")
-
-	cardDesc = cardDesc.replace("**Spell**caster", "**Spellcaster**")
-	cardDesc = cardDesc.replace("**Beast**-**Warrior**", "**Beast-Warrior**")
-	cardDesc = cardDesc.replace("Divine-**Beast**", "**Divine-Beast**")
-	cardDesc = cardDesc.replace("Winged **Beast**", "**Winged Beast**")
-	
+	for alias in aliasList:
+		cardDesc = cardDesc.replace(alias[ALIAS_BEFORE_KEY], alias[ALIAS_AFTER_KEY])
 
 	boldCardName = "**%s**"%cardName
 	boldCardNamePlural = "**%s(s)**"%cardName
@@ -218,12 +210,10 @@ def formatDesc(card):
 	cardDesc = cardDesc.replace("$cardname$", boldCardName)
 	cardDesc = cardDesc.replace("$cardnameplural", boldCardNamePlural)
 
-	while "** **" in cardDesc:
-		cardDesc = cardDesc.replace("** **", " ")
-	while "****" in cardDesc:
-		cardDesc = cardDesc.replace("****", "")
-	while "**/**" in cardDesc:
-		cardDesc = cardDesc.replace("**/**", "/")
+	for cleanupItem in cleanupList:
+		while cleanupItem.get(ALIAS_BEFORE_KEY) in cardDesc:
+			cardDesc = cardDesc.replace(cleanupItem.get(ALIAS_BEFORE_KEY), cleanupItem.get(ALIAS_AFTER_KEY))
+
 	return cardDesc
 
 def getArrows(card):

@@ -342,3 +342,5 @@ class MatchmakingManager:
     def getIdForPlayerName(self, playerName:str):
         return self.matchmaking.getIdForPlayerName(playerName)
     
+    def getPlayers(self):
+        return self.matchmaking.getPlayers()

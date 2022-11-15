@@ -2,6 +2,8 @@
 
 ERROR_BANLIST_FILE_MISSING = "Banlist file doesn't exist."
 
+BOT_MESSAGE_CARD_ADDED_TO_BANLIST = "Card added to banlist."
+
 # Banlist validation
 
 ERROR_BANLIST_BLACKLIST_NOT_SUPPORTED = "Blacklist banlists aren't supported yet."
@@ -17,6 +19,8 @@ ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET = "Format %s doesn't exist yet. You can add
 
 ERROR_CONFIG_GROUPS_AND_THREADS = "This bot doesn't support groups or threads."
 ERROR_CONFIG_DISABLED_CHANNEL = "This channel is disabled."
+
+MESSAGE_CONFIG_DEFAULT_FORMAT_SET = "%s is now the default format for the server."
 
 # Deck Collection
 
@@ -47,7 +51,7 @@ ERROR_YDK_EXTRA_COPIES = "You are running %d copies of %s, maximum is %d."
 
 ERROR_MATCHMAKING_USER_ALREADY_REGISTERED = "User <@%d> was already registered for %s!"
 ERROR_MATCHMAKING_ALREADY_IN_QUEUE = "You are already in queue!"
-ERROR_MATCHMAKING_REGISTER_FIRST = "You aren't registered to the league. Please register using /register_for_league before joining the queue!"
+ERROR_MATCHMAKING_REGISTER_FIRST = "You aren't registered to the league. Please register using /register before joining the queue!"
 ERROR_MATCHMAKING_NO_ACTIVE_MATCHES = "You have no active matches."
 ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS = "<@%d> has an active match already" 
 
@@ -81,14 +85,16 @@ ERROR_MESSAGE_NOT_AN_ADMIN = "This command requires admin privileges."
 ERROR_MESSAGE_TOO_MANY_RESULTS = "More than 20 cards contain %s. Please be more specific."
 ERROR_MESSAGE_WRONG_BANLIST_FORMAT = "The only supported banlist format is a .lflist.conf file."
 ERROR_MESSAGE_WRONG_DECK_FORMAT = "Only .ydk files can be validated."
-ERROR_MESSAGE_NO_FORMAT_FOR_NAME = "There's no format named %s. You can get a list of all installed formats with /format_list."
+ERROR_MESSAGE_NO_FORMAT_FOR_NAME = "There's no format named %s. You can get a list of all installed formats with /formats."
 ERROR_MESSAGE_NO_SUBMITTED_DECKLIST = "Player %s doesn't have a submitted decklist."
 ERROR_MESSAGE_DECK_INVALID = "Your deck is not valid in %s.\n%s"
+ERROR_MESSAGE_FORMAT_UNSUPPORTED = "%s is not supported as a format as of right now."
+ERROR_MESSAGE_WRONG_STATUS = "The valid status values are -1, 0, 1, 2 and 3."
+ERROR_MESSAGE_ABSOLUTE_SEARCH_FAILED = "%s is not a card."
 
 BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the ranked queue."
 BOT_MESSAGE_YOUR_RATING_IS = "Your current rating in the %s league is %.2f"
 BOT_MESSAGE_FORMAT_LIST = "These are all the supported formats in this server:\n%s"
-BOT_MESSAGE_FORMAT_UNSUPPORTED = "%s is not supported as a format as of right now."
 BOT_MESSAGE_CHOOSE_A_FORMAT = "Select a format."
 BOT_MESSAGE_CHOOSE_A_CARD = "Select a card."
 BOT_MESSAGE_ACTIVE_MATCH_LIST = "This is a list of all active matches in the %s league:\n%s"
@@ -103,5 +109,36 @@ BOT_MESSAGE_CHOOSE_FORMAT_TO_VALIDATE_DECK = "Please choose a format to validate
 BOT_MESSAGE_CHANNEL_IS_TIED_TO_FORMAT = "Channel %s is tied to a format: %s"
 BOT_MESSAGE_DECK_VALID = "Your deck is valid in %s."
 
-
 BOT_MESSAGE_ACTIVE_MATCH_FORMAT = "%s (%.2f) vs %s (%.2f)"
+
+
+# Command names
+
+
+COMMAND_NAME_CARD = "card"
+COMMAND_NAME_ADD_FORMAT = "add_format"
+COMMAND_NAME_TIE = "tie"
+COMMAND_NAME_DEFAULT_FORMAT = "default_format"
+COMMAND_NAME_CHECK_TIED = "check_tied"
+COMMAND_NAME_VALIDATE = "validate"
+COMMAND_NAME_BANLIST = "banlist"
+COMMAND_NAME_FORMATS = "formats"
+COMMAND_NAME_REGISTER = "register"
+COMMAND_NAME_RATING = "rating"
+COMMAND_NAME_ACTIVE_MATCHES = "active_matches"
+COMMAND_NAME_GET_MATCH = "get_match"
+COMMAND_NAME_LEADERBOARD = "leaderboard"
+COMMAND_NAME_JOIN = "join"
+COMMAND_NAME_CANCEL = "cancel"
+COMMAND_NAME_LOST = "lost"
+COMMAND_NAME_UPDATE_FORMAT = "update_format"
+COMMAND_NAME_REMOVE_FORMAT = "remove_format"
+COMMAND_NAME_COLLECT_LISTS = "collect"
+COMMAND_NAME_END_COLLECTION = "end_collection"
+COMMAND_NAME_SUBMIT_LIST = "submit"
+COMMAND_NAME_TXT_DECK = "txt_deck"
+COMMAND_NAME_YDK_DECK = "ydk_deck"
+COMMAND_NAME_IMG_DECK = "img_deck"
+COMMAND_NAME_HELP = "help"
+COMMAND_NAME_FORCE_LOSS = "force_loss"
+COMMAND_NAME_CHANGE_CARD_STATUS = "change_card_status"

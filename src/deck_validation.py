@@ -10,7 +10,7 @@ SIDE_DECK_START = "!side"
 
 
 class Card:
-	def __init__(self, cardId, copies):
+	def __init__(self, cardId:str, copies:int):
 		self.cardId = cardId
 		self.copies = copies
 
@@ -18,17 +18,26 @@ class Card:
 		self.copies+=1
 
 class Deck:
-	def __init__(self, main:List[Card], extra, side):
+	def __init__(self, main:List[Card], extra:List[Card], side:List[Card]):
 		self.main = main
 		self.extra = extra
 		self.side = side
+
+	def getMainDeck(self):
+		return self.main
+	
+	def getExtraDeck(self):
+		return self.extra
+
+	def getSideDeck(self):
+		return self.side
 
 class Ydk:
 	def __init__(self, ydkFile:str):
 		self.ydkFile = ydkFile.replace("\r", "").replace("\n\n", "\n")
 
 	def getCopies(self):
-		deck = []
+		deck : List[Card] = []
 		for line in self.ydkFile.split("\n"):
 			found = False
 			if line.isdigit():
@@ -38,7 +47,6 @@ class Ydk:
 						found = True
 				if not found:
 					deck.append(Card(line, 1))
-
 
 		return deck
 
@@ -174,21 +182,18 @@ class DeckValidator:
 	def validateAgainstBanlist(self, ydk:Ydk, banlist:str):
 		banlistAsLines = banlist.split("\n")
 		errorMessages = []
-
-		for card in ydk.getCopies():
+		copies = ydk.getCopies()
+		for card in copies:
 			cardName = self.cardCollection.getCardNameFromId(card.cardId)
 			found = False
 			for line in banlistAsLines:
 				if card.cardId in line:
 					# This is just a way of finding how many copies are legal of a given card. Not pretty but it works.
-					legality = line.split(" ")[1]
 					idCount = len(card.cardId)
-					line = line[idCount+1 : idCount+2]
-					if line == "-":
-						line = "-1"
-					limit = 0
-					limit = int(line)
-					
+					limitAsString = line[idCount+1 : idCount+2]
+					if limitAsString == "-":
+						limitAsString = "-1"
+					limit = int(limitAsString)
 					
 					# Now we check whether the max number is less than 1 (which means illegal or forbidden) 
 					# or whether there's more copies of a card than the legal limit (4 copies of anything, 3 of a semi-limited, etc)
@@ -201,8 +206,8 @@ class DeckValidator:
 							errorMessages.append(Strings.ERROR_YDK_FORBIDDEN_CARD % cardName)
 						elif limit < card.copies:
 							errorMessages.append(Strings.ERROR_YDK_EXTRA_COPIES % (card.copies, cardName, limit))
-				found = True
-				break
+					found = True
+					break
 			if not found:
 				if cardName != None:
 					errorMessages.append(Strings.ERROR_YDK_ILLEGAL_CARD % cardName)
