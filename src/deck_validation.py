@@ -7,7 +7,10 @@ EXTRA_DECK_START = "#extra"
 SIDE_DECK_START = "!side"
 
 
-
+def normalizeId(cardId:str):
+	while(cardId.startswith("0")):
+		cardId = cardId[1:]
+	return cardId
 
 class Card:
 	def __init__(self, cardId:str, copies:int):
@@ -40,6 +43,7 @@ class Ydk:
 		deck : List[Card] = []
 		for line in self.ydkFile.split("\n"):
 			found = False
+			line = normalizeId(line)
 			if line.isdigit():
 				for card in deck:
 					if card.cardId == line:

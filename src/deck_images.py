@@ -1,25 +1,26 @@
 from PIL import Image
-from urllib.request import urlopen
-from urllib.request import Request
-from src.deck_validation import Deck, Card
+from src.deck_validation import Deck
 from src.card_collection import CardCollection
 from typing import List
 import time
 
-headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'} 
 mainDeckMargin = 6
-cardWidth = 100
-cardHeight = 146
+
+cardWidth = 200
+cardHeight = 292
+
 class DeckAsImageGenerator:
 
     def __init__(self, cardCollection:CardCollection):
         self.cardCollection = cardCollection
-        
-    def getImageFromDeck(self, deck:Deck):
+
+    def buildImageFromDeck(self, deck:Deck):
         mainDeckImages : List[str]= []
         extraDeckImages : List[str] = []
         sideDeckImages : List[str] = []
         
+        #Populate the card image url arrays
+
         for card in deck.getMainDeck():
             for i in range(0,card.copies):
                 imageUrl = self.cardCollection.getCardImageFromId(card.cardId)
@@ -33,122 +34,102 @@ class DeckAsImageGenerator:
                 imageUrl = self.cardCollection.getCardImageFromId(card.cardId)
                 sideDeckImages.append(imageUrl)
 
-
-
+        
+        # This is the width *without* the outer margins
         rowWidth = 10*cardWidth + 9*mainDeckMargin
 
         extraDeckCount = len(extraDeckImages)
         extraDeckWidth = extraDeckCount * cardWidth
         extraDeckMarginCount = extraDeckCount - 1
-        extraDeckMarginWidth = int((rowWidth - extraDeckWidth)/extraDeckMarginCount) - 1
+
+        # This is the margin for the extra deck. For values larger than 10, it will likely be negative (so cards will pile on top of each other to fit)
+        extraDeckMargin = int((rowWidth - extraDeckWidth)/extraDeckMarginCount) - 1
 
         sideDeckCount = len(sideDeckImages)
         sideDeckWidth = sideDeckCount * cardWidth
         sideDeckMarginCount = sideDeckCount - 1
-        sideDeckMarginWidth = int((rowWidth - sideDeckWidth)/sideDeckMarginCount) - 1
 
-        rows = 5
-        mainDeckRows = rows
+        # This is the margin for the side deck. For values larger than 10, it will likely be negative (so cards will pile on top of each other to fit)
+        sideDeckMargin = int((rowWidth - sideDeckWidth)/sideDeckMarginCount) - 1
 
-        totalImage = None
+        # This is the width for the image, including the margins
+        width = 10*cardWidth + 11*mainDeckMargin
+
+        mainDeckRows = int(len(mainDeckImages) / 10)
+        if len(mainDeckImages) > mainDeckRows*10:
+            mainDeckRows +=1
+        hasExtraDeck = len(extraDeckImages) != 0
+        hasSideDeck = len(sideDeckImages) != 0
+
+        # This part calculates the height of the image. The width is always gonna be constant, but the height depends on how many cards are in the main deck
+        height = mainDeckRows * cardHeight + (mainDeckRows + 1) * mainDeckMargin
+        extraDeckStart = height
+        if hasExtraDeck:
+            height += cardHeight + mainDeckMargin
+        sideDeckStart = height
+        if hasSideDeck:
+            height += cardHeight + mainDeckMargin
+        
+        
+        deckImage = Image.new("RGBA", (width, height))
         lastImage = None
         lastUrl = None
+
         for i in range(0, mainDeckRows):
-            rowImage = None
-            isRowEmpty = True
             for j in range (0, 10):
+                # i is the row number, j is the column number
                 index = i*10 + j
                 if len(mainDeckImages) > index:
                     imageUrl = mainDeckImages[index]
                     if (imageUrl == lastUrl):
                         img = lastImage
                     else:
-                        request = Request(imageUrl, None, headers)
-                        img = Image.open(urlopen(request))
+                        img = Image.open(imageUrl)
                     lastUrl = imageUrl
+                    if lastImage != img:
+                        img = img.resize((cardWidth, cardHeight))
                     lastImage = img
-                    img = img.resize((cardWidth, cardHeight))
-                    if (rowImage == None):
-                        rowImage = createFirstImageInRow(img, mainDeckMargin)
-                        isRowEmpty = False
-                    else:
-                        rowImage = mergeHorizontally(rowImage, img, mainDeckMargin, mainDeckMargin)
-                        isRowEmpty = False
-            if not isRowEmpty:
-                rowImage = addRightMargin(rowImage, mainDeckMargin)
-                if totalImage == None:
-                    totalImage = rowImage
-                else:
-                    totalImage = mergeVertically(totalImage, rowImage, 0)
+                    x = j * cardWidth + (j+1) * mainDeckMargin
+                    y = i * cardHeight + (i+1) * mainDeckMargin
+                    deckImage.paste(img, (x,y))
         
-        extraImage = None
-        if len(extraDeckImages) > 0:
+        if hasExtraDeck:
+            column = 0
+            # Extra Deck is displayed in just 1 row, so we just need column number
             for imageUrl in extraDeckImages:
                 if (imageUrl == lastUrl):
                     img = lastImage
                 else:
-                    request = Request(imageUrl, None, headers)
-                    img = Image.open(urlopen(request))
+                    img = Image.open(imageUrl)
                 lastUrl = imageUrl
+                if lastImage != img:
+                    img = img.resize((cardWidth, cardHeight))
                 lastImage = img
-                img = img.resize((cardWidth, cardHeight))
-                if (extraImage == None):
-                    extraImage = createFirstImageInRow(img, mainDeckMargin)
-                else:
-                    extraImage = mergeHorizontally(extraImage, img, mainDeckMargin, extraDeckMarginWidth)
-            totalImage = mergeVertically(totalImage, extraImage, mainDeckMargin)
-
-        sideImage = None
-        if len(sideDeckImages) > 0:
+                x = column * (cardWidth + extraDeckMargin) + mainDeckMargin
+                y = extraDeckStart
+                deckImage.paste(img, (x,y))
+                column+=1
+        
+        if hasSideDeck:
+            column = 0
+            # Same for the Side Deck.
             for imageUrl in sideDeckImages:
                 if (imageUrl == lastUrl):
                     img = lastImage
                 else:
-                    request = Request(imageUrl, None, headers)
-                    img = Image.open(urlopen(request))
+                    img = Image.open(imageUrl)
                 lastUrl = imageUrl
+                if lastImage != img:
+                    img = img.resize((cardWidth, cardHeight))
                 lastImage = img
-                img = img.resize((cardWidth, cardHeight))
-                if (sideImage == None):
-                    sideImage = createFirstImageInRow(img, mainDeckMargin)
-                else:
-                    sideImage = mergeHorizontally(sideImage, img, mainDeckMargin, sideDeckMarginWidth)
-            totalImage = mergeVertically(totalImage, sideImage, mainDeckMargin)
-
-
+                x = column * (cardWidth + sideDeckMargin) + mainDeckMargin
+                y = sideDeckStart
+                deckImage.paste(img, (x,y))
+                column+=1
+        
         timestamp = int(time.time())
         timestampAsString = str(timestamp)
         filename = "./img/%s.png"%timestampAsString
  
-        totalImage.save(filename)
+        deckImage.save(filename)
         return filename
-
-def createFirstImageInRow(im1:Image, margin:int):
-    w = im1.size[0] + margin
-    h = im1.size[1] + margin
-    im = Image.new("RGBA", (w, h))
-    im.paste(im1, (margin, margin))
-    return im
-
-def mergeHorizontally(im1:Image, im2:Image, marginTop:int, marginLeft:int):
-    w = im1.size[0] + im2.size[0] + marginLeft
-    h = max(im1.size[1], im2.size[1])
-    im = Image.new("RGBA", (w, h))
-    im.paste(im1)
-    im.paste(im2, (im1.size[0] + marginLeft, marginTop))
-    return im
-
-def mergeVertically(im1:Image, im2:Image, marginTop:int):
-    w = max(im1.size[0], im2.size[0])
-    h = im1.size[1] + im2.size[1]
-    im = Image.new("RGBA", (w, h))
-    im.paste(im1)
-    im.paste(im2, (0, im1.size[1]))
-    return im
-
-def addRightMargin(im1:Image, marginRight:int):
-    w = im1.size[0] + marginRight
-    h = im1.size[1]
-    im = Image.new("RGBA", (w, h))
-    im.paste(im1)
-    return im

@@ -2,7 +2,8 @@ import urllib.request
 from typing import List
 import json
 import time
-
+import os
+from PIL import Image
 
 def getRequest():
     header = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
@@ -17,12 +18,16 @@ def getRequest():
     request = urllib.request.Request(url, None, header)
     return request
 
+def getImageRequest(imageUrl:str):
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'} 
+    request = urllib.request.Request(imageUrl, None, headers)
+    return request
 
 DATA = 'data'
 KEY_NAME = 'name'
 KEY_ID = 'id'
 KEY_CARD_IMAGES = 'card_images'
-KEY_IMAGE_URL = 'image_url_small'
+KEY_IMAGE_URL = 'image_url'
 
 
 class CardCollection:
@@ -71,5 +76,16 @@ class CardCollection:
             if cardIdAsInt == card.get(KEY_ID):
                 for variant in card.get(KEY_CARD_IMAGES):
                     if cardIdAsInt == variant.get(KEY_ID):
-                        return variant.get(KEY_IMAGE_URL)
-        return "https://upload.wikimedia.org/wikipedia/en/thumb/2/2b/Yugioh_Card_Back.jpg/250px-Yugioh_Card_Back.jpg"
+                        localFile = "./img/%d.jpg"%cardIdAsInt
+                        if not os.path.exists(localFile):
+                            imageUrl = variant.get(KEY_IMAGE_URL)
+                            request = getImageRequest(imageUrl)
+                            img = Image.open(urllib.request.urlopen(request))
+                            img.save(localFile)
+                        return localFile
+        return "./img/cardback.jpg"
+
+    def downloadAllImages(self):
+        for card in self.cards:
+            for variant in card.get(KEY_CARD_IMAGES):
+                self.getCardImageFromId(variant.get(KEY_ID))

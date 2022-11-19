@@ -69,6 +69,7 @@ ERROR_PAY_ME_MONEY = "This server is not enabled.\n\nTo enable this server you h
 
 ERROR_FORMAT_NAME_EMPTY = "Format name can't be empty."
 ERROR_FORMAT_NAME_INVALID_CHARACTER = "You can't have \"%s\" in a format name."
+ERROR_FORMAT_NAME_ADVANCED = "You can't add an Advanced banlist like that. To add Advanced format, please use /add_advanced"
 
 # RBYB
 
@@ -136,9 +137,11 @@ COMMAND_NAME_REMOVE_FORMAT = "remove_format"
 COMMAND_NAME_COLLECT_LISTS = "collect"
 COMMAND_NAME_END_COLLECTION = "end_collection"
 COMMAND_NAME_SUBMIT_LIST = "submit"
+COMMAND_NAME_SUBMIT_DB_LIST = "submitdb"
 COMMAND_NAME_TXT_DECK = "txt_deck"
 COMMAND_NAME_YDK_DECK = "ydk_deck"
 COMMAND_NAME_IMG_DECK = "img_deck"
 COMMAND_NAME_HELP = "help"
 COMMAND_NAME_FORCE_LOSS = "force_loss"
 COMMAND_NAME_CHANGE_CARD_STATUS = "change_card_status"
+COMMAND_NAME_ADD_ADVANCED = "add_advanced"
