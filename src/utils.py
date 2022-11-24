@@ -1,6 +1,5 @@
 import math
 import discord
-import src.strings as Strings
 from discord import app_commands
 
 DM_CHANNEL_KEY = "dm"
@@ -33,6 +32,14 @@ class OperationResult:
 	def getMessage(self):
 		return self.message
 
+class MyClient(discord.Client):
+    def __init__(self, *, intents: discord.Intents):
+        super().__init__(intents=intents)
+        self.tree = app_commands.CommandTree(self)
+
+    async def setup_hook(self):
+        await self.tree.sync()
+
 def getStatusInBanlist(cardId, banlist):
 	banlistAsLines = banlist.split("\n")
 	idAsString = str(cardId)
@@ -45,7 +52,6 @@ def getStatusInBanlist(cardId, banlist):
 			return int(line)
 	return -1
 
-
 def getChannelName(channel:discord.channel):
 	if isinstance(channel, discord.channel.DMChannel):
 		return DM_CHANNEL_KEY
@@ -57,22 +63,3 @@ def getChannelName(channel:discord.channel):
 		return OTHER_KEY
 	else:
 		return channel.name
-
-def isValidFilename(filename:str):
-	if len(filename) == 0:
-		return OperationResult(False, Strings.ERROR_FORMAT_NAME_EMPTY)
-	invalidCharacters = "#%&\{\}\\<>*?/$!\'\":@+`|="
-	for char in invalidCharacters:
-		if char in filename:
-			return OperationResult(False, Strings.ERROR_FORMAT_NAME_INVALID_CHARACTER % char)
-	if filename=="Advanced":
-		return OperationResult(False, Strings.ERROR_FORMAT_NAME_ADVANCED)
-	return OperationResult(True, "")
-
-class MyClient(discord.Client):
-    def __init__(self, *, intents: discord.Intents):
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
-
-    async def setup_hook(self):
-        await self.tree.sync()

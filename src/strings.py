@@ -92,6 +92,13 @@ ERROR_MESSAGE_DECK_INVALID = "Your deck is not valid in %s.\n%s"
 ERROR_MESSAGE_FORMAT_UNSUPPORTED = "%s is not supported as a format as of right now."
 ERROR_MESSAGE_WRONG_STATUS = "The valid status values are -1, 0, 1, 2 and 3."
 ERROR_MESSAGE_ABSOLUTE_SEARCH_FAILED = "%s is not a card."
+ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT = "There is no ongoing tournament in this server"
+ERROR_MESSAGE_SIGNUPS_CLOSED = "Sign ups for the tournament are closed"
+ERROR_MESSAGE_ALREADY_JOINED_TOURNAMENT = "You were already registered to the tournament"
+ERROR_MESSAGE_CANT_DROP = "%s is not registered for this tournament"
+ERROR_MESSAGE_NO_ACTIVE_MATCH = "%s doesn't have an active match"
+ERROR_MESSAGE_TOURNAMENT_ALREADY_STARTED = "Tournament had already started."
+ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED = "Tournament hasn't started yet"
 
 BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the ranked queue."
 BOT_MESSAGE_YOUR_RATING_IS = "Your current rating in the %s league is %.2f"
@@ -109,39 +116,69 @@ BOT_MESSAGE_CHOOSE_A_FORMAT_TO_DOWNLOAD_BANLIST = "Please choose a format to dow
 BOT_MESSAGE_CHOOSE_FORMAT_TO_VALIDATE_DECK = "Please choose a format to validate your deck."
 BOT_MESSAGE_CHANNEL_IS_TIED_TO_FORMAT = "Channel %s is tied to a format: %s"
 BOT_MESSAGE_DECK_VALID = "Your deck is valid in %s."
+BOT_MESSAGE_JOINED_TOURNAMENT = "You have registered to the tournament!"
+BOT_MESSAGE_DROPPED = "%s was removed from the tournament."
+BOT_MESSAGE_UNREGISTERED = "%s has unregistered from the tournament."
+BOT_MESSAGE_TOURNAMENT_CREATED = "Your tournament \"%s\" was created! You can find it at %s"
+BOT_MESSAGE_TOURNAMENT_STARTED = "Tournament has started! You can check round 1 at %s"
+BOT_MESSAGE_TOURNAMENT_ENDED =  "Tournament has finished! You can see the standings in %s"
+BOT_MESSAGE_DECKLIST_SUBMITTED = "Your decklist was submitted!"
+BOT_MESSAGE_LOSS_REGISTERED = "<@%d> lost to <@%d>."
 
 BOT_MESSAGE_ACTIVE_MATCH_FORMAT = "%s (%.2f) vs %s (%.2f)"
 
 
 # Command names
 
-
+# Card command
 COMMAND_NAME_CARD = "card"
-COMMAND_NAME_ADD_FORMAT = "add_format"
-COMMAND_NAME_TIE = "tie"
-COMMAND_NAME_DEFAULT_FORMAT = "default_format"
-COMMAND_NAME_CHECK_TIED = "check_tied"
-COMMAND_NAME_VALIDATE = "validate"
-COMMAND_NAME_BANLIST = "banlist"
-COMMAND_NAME_FORMATS = "formats"
-COMMAND_NAME_REGISTER = "register"
-COMMAND_NAME_RATING = "rating"
-COMMAND_NAME_ACTIVE_MATCHES = "active_matches"
-COMMAND_NAME_GET_MATCH = "get_match"
-COMMAND_NAME_LEADERBOARD = "leaderboard"
-COMMAND_NAME_JOIN = "join"
-COMMAND_NAME_CANCEL = "cancel"
-COMMAND_NAME_LOST = "lost"
-COMMAND_NAME_UPDATE_FORMAT = "update_format"
-COMMAND_NAME_REMOVE_FORMAT = "remove_format"
-COMMAND_NAME_COLLECT_LISTS = "collect"
-COMMAND_NAME_END_COLLECTION = "end_collection"
-COMMAND_NAME_SUBMIT_LIST = "submit"
-COMMAND_NAME_SUBMIT_DB_LIST = "submitdb"
-COMMAND_NAME_TXT_DECK = "txt_deck"
-COMMAND_NAME_YDK_DECK = "ydk_deck"
-COMMAND_NAME_IMG_DECK = "img_deck"
-COMMAND_NAME_HELP = "help"
-COMMAND_NAME_FORCE_LOSS = "force_loss"
-COMMAND_NAME_CHANGE_CARD_STATUS = "change_card_status"
-COMMAND_NAME_ADD_ADVANCED = "add_advanced"
+
+# Help command
+COMMAND_NAME_HELP = "help" # Done
+
+# Format-related commands
+COMMAND_NAME_FORMAT_ADD = "add_format" # Done
+COMMAND_NAME_FORMAT_TIE = "tie" # Done
+COMMAND_NAME_FORMAT_DEFAULT = "default_format" # Done
+COMMAND_NAME_FORMAT_CHECK_TIED = "check_tied" # Done
+COMMAND_NAME_FORMAT_BANLIST = "banlist" # Done
+COMMAND_NAME_FORMAT_LIST = "formats" # Done
+COMMAND_NAME_FORMAT_UPDATE = "update_format" # Done
+COMMAND_NAME_FORMAT_REMOVE = "remove_format" # Done
+COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS = "change_card_status" # Done
+COMMAND_NAME_FORMAT_ADD_ADVANCED = "add_advanced" # Done
+
+# Deck-related commands
+COMMAND_NAME_DECK_VALIDATE = "validate" # Done
+
+# League-related commands
+COMMAND_NAME_LEAGUE_REGISTER = "l_register" # Done
+COMMAND_NAME_LEAGUE_RATING = "l_rating" # Done
+COMMAND_NAME_LEAGUE_ACTIVE_MATCHES = "l_matches" # Done
+COMMAND_NAME_LEAGUE_GET_MATCH = "l_match" # Done
+COMMAND_NAME_LEAGUE_LEADERBOARD = "l_leaderboard" # Done
+COMMAND_NAME_LEAGUE_JOIN = "l_join" # Done
+COMMAND_NAME_LEAGUE_CANCEL = "l_cancel" # Done
+COMMAND_NAME_LEAGUE_LOST = "l_lost" # Done 
+COMMAND_NAME_LEAGUE_FORCE_LOSS = "force_loss" # Done
+
+# Tournament-related commands
+COMMAND_NAME_TOURNAMENT_CREATE = "t_create" # Done
+COMMAND_NAME_TOURNAMENT_INFO = "t_info" # Done
+COMMAND_NAME_TOURNAMENT_REPORT_LOSS = "t_loss" # Done
+COMMAND_NAME_TOURNAMENT_FORCE_LOSS = "t_force_loss" # Done
+COMMAND_NAME_TOURNAMENT_JOIN = "t_join" # Done
+COMMAND_NAME_TOURNAMENT_INVITE = "t_invite" # In development
+COMMAND_NAME_TOURNAMENT_SUBMIT_DECK = "t_submit" # Done
+COMMAND_NAME_TOURNAMENT_SUBMIT_DB_DECK = "t_submitdb" # Done
+COMMAND_NAME_TOURNAMENT_DROP = "t_drop" # Done
+COMMAND_NAME_TOURNAMENT_DQ = "t_dq" # Done
+COMMAND_NAME_TOURNAMENT_START = "t_start" # Done
+COMMAND_NAME_TOURNAMENT_END = "t_end" # Done
+COMMAND_NAME_TOURNAMENT_PRINT_STANDINGS = "t_standings" # In development
+COMMAND_NAME_TOURNAMENT_PRINT_ACTIVE_MATCHES = "t_matches" # In development
+COMMAND_NAME_TOURNAMENT_TXT_DECK = "txt_deck" # Done
+COMMAND_NAME_TOURNAMENT_YDK_DECK = "ydk_deck" # Done
+COMMAND_NAME_TOURNAMENT_IMG_DECK = "img_deck" # Done
+COMMAND_NAME_TOURNAMENT_GET_ALL_LISTS = "download_decks" # Done
+COMMAND_NAME_TOURNAMENT_CONFIRM_DECK = "confirm_deck" # Done

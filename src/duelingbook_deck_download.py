@@ -1,6 +1,7 @@
 import urllib
 import json
 from urllib import parse
+from src.utils import OperationResult
 
 DB_URL = "https://www.duelingbook.com/php-scripts/load-deck.php?id=%s"
 
@@ -57,3 +58,15 @@ class DuelingbookManager:
     def getYDKFromDuelingbookURL(self, playerName:str, duelingbookURL:str):
         deck = getDeckAsJSON(duelingbookURL)
         return duelingbookDeckToYdk(deck, playerName)
+
+    def isValidDuelingbookUrl(self, duelingbookURL:str):
+        if "duelingbook.com/deck" in duelingbookURL:
+            if "id=" in duelingbookURL:
+                id = getIdFromUrl(duelingbookURL)
+                if id.isdigit():
+                    return OperationResult(True, "")
+                else:
+                    return OperationResult(False, "Duelingbook URL ids are numbers")
+            else:
+                return OperationResult(False, "This Duelingbook URL doesn't have an ID")
+        return OperationResult(False, "This is not a Duelingbook URL. Duelingbook URLs look like duelingbook.com/deck?id=11963395")

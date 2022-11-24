@@ -241,6 +241,6 @@ class Config:
 		config = self.getConfigForServer(serverId)
 		return config.get(DISABLED_CHANNELS_KEY)
 
-	def getSupportedFormats(self, serverId):
+	def getSupportedFormats(self, serverId) -> List[str]:
 		config = self.getConfigForServer(serverId)
 		return config.get(SUPPORTED_FORMATS_KEY)

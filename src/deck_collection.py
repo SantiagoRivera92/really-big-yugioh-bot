@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from typing import List
 from src.utils import OperationResult
 from src.deck_validation import Ydk
@@ -35,9 +36,9 @@ class DeckCollection:
         self.formatName = formatName
         self.serverId = serverId
         self.filename = COLLECTION_FILE_NAME%(serverId, formatName)
-        folderName = FOLDER_NAME%(serverId, formatName)
-        if not os.path.exists(folderName):
-            os.makedirs(folderName)
+        self.folderName = FOLDER_NAME%(serverId, formatName)
+        if not os.path.exists(self.folderName):
+            os.makedirs(self.folderName)
         if not os.path.exists(self.filename):
             with open(self.filename, 'w') as file:
                 json.dump(self.getDefaultDeckCollectionContent(), file, indent=4)
@@ -48,6 +49,10 @@ class DeckCollection:
             self.collectionEnabled:bool = collection[COLLECTION_ENABLED_KEY]
             for deck in decks:
                 self.decks.append(deckFromDict(deck))
+
+    def zipAllDecks(self):
+        shutil.make_archive("./ydk/archive", 'zip', DECKS_FOLDER_NAME % (self.serverId, self.formatName))
+        return "./ydk/archive.zip"
 
     def toDict(self):
         collection = {}
@@ -168,3 +173,9 @@ class DeckCollectionManager:
 
     def getReadableDecklistForPlayer(self, playerName:str):
         return self.deckCollection.getReadableDecklistForPlayer(playerName)
+
+    def getAllDecks(self):
+        return self.deckCollection.decks
+
+    def zipAllDecks(self):
+        return self.deckCollection.zipAllDecks()

@@ -73,16 +73,15 @@ class CardCollection:
         self.refreshCards()
         cardIdAsInt = int(cardId)
         for card in self.cards:
-            if cardIdAsInt == card.get(KEY_ID):
-                for variant in card.get(KEY_CARD_IMAGES):
-                    if cardIdAsInt == variant.get(KEY_ID):
-                        localFile = "./img/%d.jpg"%cardIdAsInt
-                        if not os.path.exists(localFile):
-                            imageUrl = variant.get(KEY_IMAGE_URL)
-                            request = getImageRequest(imageUrl)
-                            img = Image.open(urllib.request.urlopen(request))
-                            img.save(localFile)
-                        return localFile
+            for variant in card.get(KEY_CARD_IMAGES):
+                if cardIdAsInt == variant.get(KEY_ID):
+                    localFile = "./img/%d.jpg"%cardIdAsInt
+                    if not os.path.exists(localFile):
+                        imageUrl = variant.get(KEY_IMAGE_URL)
+                        request = getImageRequest(imageUrl)
+                        img = Image.open(urllib.request.urlopen(request))
+                        img.save(localFile)
+                    return localFile
         return "./img/cardback.jpg"
 
     def downloadAllImages(self):
