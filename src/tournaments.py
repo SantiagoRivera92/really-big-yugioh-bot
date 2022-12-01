@@ -30,6 +30,8 @@ SCORES_CSV_KEY = 'scores_csv'
 PARTICIPANT_KEY = 'participant'
 PARTICIPANTS_KEY = 'participants'
 
+VALID_TOURNAMENT_TYPES = ["swiss", "double elimination", "single elimination", "round robin"]
+
 def sanitizedTournamentName(tournamentName:str):
 	legalCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
 	sanitizedTournamentName = ""
@@ -226,18 +228,22 @@ def getTournamentForServer(serverId:int):
 			return tournament
 
 class TournamentManager:
+
+
 	def __init__(self, credentials:CredentialsManager, serverId: int):
 		challonge.set_credentials(credentials.getChallongeUsername(), credentials.getChallongeApiKey())
 		self.serverId = serverId
 
-	def createTournament(self, tournamentName:str, formatName:str):
+	def createTournament(self, tournamentName:str, formatName:str, tournament_type:str):
 		try:
 			params = {
 				"pts_for_match_win":3.0,
 				"pts_for_match_tie":1.0,
 				"pts_for_bye":3.0
 			}
-			tournamentDict = challonge.tournaments.create(tournamentName, sanitizedTournamentName(tournamentName), "swiss", **params)
+			if not tournament_type in VALID_TOURNAMENT_TYPES:
+				return OperationResult(False, Strings.ERROR_INVALID_TOURNAMENT_TYPE)
+			tournamentDict = challonge.tournaments.create(tournamentName, sanitizedTournamentName(tournamentName), tournament_type, **params)
 			tournament = Tournament(self.serverId)
 			tournament.setUrl(tournamentDict[URL_KEY]).setId(tournamentDict[ID_KEY]).setName(tournamentName).setFormat(formatName).open().save()
 			return OperationResult(True, Strings.BOT_MESSAGE_TOURNAMENT_CREATED % (tournamentName, tournament.getUrl()))
@@ -398,3 +404,7 @@ class TournamentManager:
 
 	def getTournamentForServer(self):
 		return getTournamentForServer(self.serverId)
+
+	def getTournamentPlayers(self):
+		tournament = self.getTournamentForServer()
+		return tournament.players

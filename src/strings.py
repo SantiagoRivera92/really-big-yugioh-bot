@@ -99,6 +99,7 @@ ERROR_MESSAGE_CANT_DROP = "%s is not registered for this tournament"
 ERROR_MESSAGE_NO_ACTIVE_MATCH = "%s doesn't have an active match"
 ERROR_MESSAGE_TOURNAMENT_ALREADY_STARTED = "Tournament had already started."
 ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED = "Tournament hasn't started yet"
+ERROR_INVALID_TOURNAMENT_TYPE = "Invalid tournament type. Please use the options given by autocorrect."
 
 BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the ranked queue."
 BOT_MESSAGE_YOUR_RATING_IS = "Your current rating in the %s league is %.2f"
@@ -147,6 +148,7 @@ COMMAND_NAME_FORMAT_UPDATE = "update_format" # Done
 COMMAND_NAME_FORMAT_REMOVE = "remove_format" # Done
 COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS = "change_card_status" # Done
 COMMAND_NAME_FORMAT_ADD_ADVANCED = "add_advanced" # Done
+COMMAND_NAME_FORMAT_ADD_TIME_WIZARD = "add_timewizard" # In development
 
 # Deck-related commands
 COMMAND_NAME_DECK_VALIDATE = "validate" # Done

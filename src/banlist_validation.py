@@ -7,7 +7,7 @@ BLACKLIST = "$blacklist"
 
 class BanlistValidator:
 
-	def validateBanlist(self, decodedBanlist):
+	def validateBanlist(self, decodedBanlist: str):
 
 		decodedBanlist = decodedBanlist.replace("\r", "")
 
