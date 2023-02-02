@@ -350,7 +350,10 @@ class TournamentManager:
 		if tournament == None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
 		if tournament.isOpen():
-			challonge.participants.create(tournament.id, playerName)
+			if tournament.getPlayerForName(playerName) == None:
+				challonge.participants.create(tournament.id, playerName)
+			else:
+				return OperationResult(False, Strings.ERROR_MESSAGE_PLAYER_ALREADY_JOINED)
 		return tournament.addPlayer(playerName, playerId)
 
 	def drop(self, playerName:str):

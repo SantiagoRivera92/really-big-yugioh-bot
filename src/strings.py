@@ -101,6 +101,7 @@ ERROR_MESSAGE_NO_ACTIVE_MATCH = "%s doesn't have an active match"
 ERROR_MESSAGE_TOURNAMENT_ALREADY_STARTED = "Tournament had already started."
 ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED = "Tournament hasn't started yet"
 ERROR_INVALID_TOURNAMENT_TYPE = "Invalid tournament type. Please use the options given by autocorrect."
+ERROR_MESSAGE_PLAYER_ALREADY_JOINED = "You have already joined the tournament."
 
 BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the %s format ranked queue."
 BOT_MESSAGE_YOUR_RATING_IS = "Your current rating in the %s league is %.2f"
