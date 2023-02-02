@@ -365,6 +365,7 @@ async def add_timewizard(interaction: discord.Interaction, format_date: str, for
 	result = banlistGenerator.validateDate(format_date)
 	if not result.wasSuccessful():
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
 
 	# Check if format name is correct
 	result = isValidFilename(format_name)
@@ -408,7 +409,20 @@ async def tie_format_to_channel(interaction: discord.Interaction, format_name: s
 	channelName = getChannelName(interaction.channel)
 	result = config.setDefaultFormatForChannel(
 		format_name, channelName, serverId)
-	await interaction.response.send_message(result.getMessage(), ephemeral=True)
+	await interaction.response.send_message(result.getMessage(), ephemeral = True)
+
+@bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_SET_DEFAULT_OUTPUT_CHANNEL, description="Sets this channel as the default output channel for League-related commands.")
+async def set_default_league_channel(interaction:discord.Interaction):
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, True)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+	
+	channelId = interaction.channel_id
+	result = config.setDefaultLeagueChannel(channelId, serverId)
+	await interaction.response.send_message(result.getMessage(), ephemeral = True)
+
 
 
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_DEFAULT, description="Sets the default format for the entire server.")
@@ -678,8 +692,7 @@ async def print_leaderboard(interaction: discord.Interaction):
 		lb = ""
 		i = 1
 		for player in leaderboard:
-			lb = "%s\n%d - %s (%.2f)" % (lb, i,
-										 player.getPlayerName(), player.getPlayerScore())
+			lb = "%s\n%d - %s (%.2f)" % (lb, i, player.getPlayerName(), player.getPlayerScore())
 			i += 1
 		await interaction.followup.send(lb)
 
@@ -706,11 +719,15 @@ async def join_queue(interaction: discord.Interaction):
 	if result.wasSuccessful():
 		await interaction.followup.send(result.getMessage())
 		activeMatch = manager.getMatchForPlayer(playerId)
+		channelId = interaction.channel_id
+		channelId = config.getDefaultLeagueChannel(channelId, serverId)
+
+		channel = bot.get_channel(channelId)
 		if (activeMatch != None):
 			# A match has started! Notify the channel so it"s public knowledge
-			await interaction.channel.send(result.getMessage())
+			await channel.send(result.getMessage())
 		else:
-			await interaction.channel.send(Strings.BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE)
+			await channel.send(Strings.BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE % forcedFormat)
 	else:
 		await interaction.followup.send(result.getMessage())
 
@@ -741,6 +758,8 @@ async def cancel_match(interaction: discord.Interaction):
 	else:
 		await interaction.followup.send(result.getMessage())
 
+
+	
 
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_LOST, description="Notifies you lost your ranked match.")
 async def notify_ranked_win(interaction: discord.Interaction):
@@ -897,6 +916,62 @@ async def get_readable_decklist(interaction: discord.Interaction, player_name: s
 		await interaction.followup.send(readable)
 	else:
 		await interaction.response.send_message(result.getMessage())
+
+
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_LIST_PLAYERS_WITH_NO_DECK, description="Lists all players that have registered to a tournament and haven't submitted a decklist.")
+async def list_unsubmitted_players(interaction: discord.Interaction):
+
+	"""Lists all players that have registered to a tournament and haven't submitted a decklist."""
+
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	result = canCommandExecute(interaction, False)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+
+	await interaction.response.defer(ephemeral=True)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+	manager = TournamentManager(credentials, serverId)
+	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+
+	players = manager.getTournamentPlayers()
+	noDeck:List[str] = []
+	for player in players:
+		if not(player.hasDeck):
+			identifier = "<@" + str(player.discordId) + ">"
+			noDeck.append(identifier)
+	
+	if len(noDeck) > 0:
+		message = "List of players who have joined the tournament but don't have a deck: \n\n"
+		for player in noDeck:
+			message = message + player + "\n"
+		await interaction.followup.send(message)
+	else:
+		await interaction.followup.send("There are no players who haven't submitted a deck")
+
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEAR_DECKS, description="Clears every decklist from the active tournament.")
+async def list_unsubmitted_players(interaction: discord.Interaction):
+
+	"""Lists all players that have registered to a tournament and haven't submitted a decklist."""
+
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	result = canCommandExecute(interaction, False)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+
+	await interaction.response.defer(ephemeral=True)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+	deckCollectionManager.cleardecks()
+	manager = getTournamentManager(interaction)
+	manager.cleardecks()
+
+	await interaction.followup.send("All decks have been deleted.")
+
+
 
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_YDK_DECK, description="Gets a decklist as a YDK file")

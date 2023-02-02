@@ -54,8 +54,12 @@ class Player:
 		self.challongeId = challongeId
 
 	def setDeckPath(self, deckPath:str):
-		self.deckPath = deckPath
-		self.hasDeck = True
+		if not deckPath == None:
+			self.deckPath = deckPath
+			self.hasDeck = True
+		else:
+			self.deckPath = None
+			self.hasDeck = False
 
 	def toJson(self):
 		dict = {}
@@ -172,6 +176,14 @@ class Tournament:
 			if player.getChallongePlayerId() == challongeId:
 				return player
 
+	def cleardecks(self):
+		newPlayers = []
+		for player in self.players:
+			player.setDeckPath(None)
+			newPlayers.append(player)
+		self.players = newPlayers
+		self.save()
+
 	def removePlayer(self, playername:str):
 		if playername in self.players:
 			self.players.remove(playername)
@@ -282,7 +294,6 @@ class TournamentManager:
 		tournament.save()
 		return OperationResult(True, Strings.BOT_MESSAGE_DECKLIST_SUBMITTED)
 		
-
 	def getMatches(self):
 		tournament = getTournamentForServer(self.serverId)
 		if tournament == None:
@@ -401,6 +412,11 @@ class TournamentManager:
 			p2 = tournament.getPlayerFromChallongeId(player2)
 			activeMatches = activeMatches + "\n<@%d> vs <@%d>" % (p1.discordId, p2.discordId)
 		return OperationResult(True, activeMatches)
+
+	def cleardecks(self):
+		tournament = self.getTournamentForServer()
+		if not tournament == None:
+			tournament.cleardecks()
 
 	def getTournamentForServer(self):
 		return getTournamentForServer(self.serverId)

@@ -21,6 +21,7 @@ ERROR_CONFIG_GROUPS_AND_THREADS = "This bot doesn't support groups or threads."
 ERROR_CONFIG_DISABLED_CHANNEL = "This channel is disabled."
 
 MESSAGE_CONFIG_DEFAULT_FORMAT_SET = "%s is now the default format for the server."
+MESSAGE_DEFAULT_LEAGUE_CHANNEL_SET = "This channel is now the default output channel for League commands"
 
 # Deck Collection
 
@@ -101,7 +102,7 @@ ERROR_MESSAGE_TOURNAMENT_ALREADY_STARTED = "Tournament had already started."
 ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED = "Tournament hasn't started yet"
 ERROR_INVALID_TOURNAMENT_TYPE = "Invalid tournament type. Please use the options given by autocorrect."
 
-BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the ranked queue."
+BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the %s format ranked queue."
 BOT_MESSAGE_YOUR_RATING_IS = "Your current rating in the %s league is %.2f"
 BOT_MESSAGE_FORMAT_LIST = "These are all the supported formats in this server:\n%s"
 BOT_MESSAGE_CHOOSE_A_FORMAT = "Select a format."
@@ -163,6 +164,7 @@ COMMAND_NAME_LEAGUE_JOIN = "l_join" # Done
 COMMAND_NAME_LEAGUE_CANCEL = "l_cancel" # Done
 COMMAND_NAME_LEAGUE_LOST = "l_lost" # Done 
 COMMAND_NAME_LEAGUE_FORCE_LOSS = "force_loss" # Done
+COMMAND_NAME_LEAGUE_SET_DEFAULT_OUTPUT_CHANNEL = "set_league_channel" # Done
 
 # Tournament-related commands
 COMMAND_NAME_TOURNAMENT_CREATE = "t_create" # Done
@@ -184,3 +186,5 @@ COMMAND_NAME_TOURNAMENT_YDK_DECK = "ydk_deck" # Done
 COMMAND_NAME_TOURNAMENT_IMG_DECK = "img_deck" # Done
 COMMAND_NAME_TOURNAMENT_GET_ALL_LISTS = "download_decks" # Done
 COMMAND_NAME_TOURNAMENT_CONFIRM_DECK = "confirm_deck" # Done
+COMMAND_NAME_TOURNAMENT_LIST_PLAYERS_WITH_NO_DECK = "t_players_without_deck" # Done
+COMMAND_NAME_TOURNAMENT_CLEAR_DECKS = "t_clear_decks" # Done
