@@ -33,25 +33,25 @@ def getIdFromUrl(url:str):
     return parse.parse_qs(parse.urlparse(url).query)['id'][0]
     
 
-def duelingbookDeckToYdk(deck:dict, playerName:str):
+def duelingbookDeckToYdk(deck:dict, playerName:str) -> str:
     mainDeck = deck[MAIN_DECK_KEY]
     extraDeck = deck[EXTRA_DECK_KEY]
     sideDeck = deck[SIDE_DECK_KEY]
 
-    deck = "#Created by %s\n" % playerName
-    deck = deck + "#main\n"
+    ydk = "#Created by %s\n" % playerName
+    ydk = ydk + "#main\n"
     for card in mainDeck:
-        deck = deck + card[CARD_ID_KEY] + "\n"
+        ydk = ydk + card[CARD_ID_KEY] + "\n"
     if len(extraDeck) > 0:
-        deck = deck + "#extra\n"
+        ydk = ydk + "#extra\n"
         for card in extraDeck:
-            deck = deck + card[CARD_ID_KEY] + "\n"
+            ydk = ydk + card[CARD_ID_KEY] + "\n"
     if len(sideDeck) > 0:
-        deck = deck + "!side\n"
+        ydk = ydk + "!side\n"
         for card in sideDeck:
-            deck = deck + card[CARD_ID_KEY] + "\n"
+            ydk = ydk + card[CARD_ID_KEY] + "\n"
 
-    return deck
+    return ydk
 
 class DuelingbookManager:
 

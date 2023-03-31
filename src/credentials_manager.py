@@ -5,6 +5,7 @@ DISCORD_API_KEY = 'discord_key'
 ADVANCED_BANLIST_KEY = 'advanced_banlist'
 CHALLONGE_API_KEY = 'challonge_key'
 CHALLONGE_USERNAME_KEY = 'challonge_username'
+GOOGLE_DRIVE_FOLDER = 'google_drive_folder'
 
 header = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
 			  'AppleWebKit/537.11 (KHTML, like Gecko) '
@@ -37,3 +38,6 @@ class CredentialsManager:
 
 	def getChallongeApiKey(self):
 		return self.credentials.get(CHALLONGE_API_KEY)
+
+	def getGoogleDriveFolder(self):
+		return self.credentials.get(GOOGLE_DRIVE_FOLDER)

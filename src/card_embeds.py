@@ -166,6 +166,17 @@ def formatDesc(card):
 	cardDesc = cardDesc.replace(cardName, "$cardname$")
 	cardDesc = cardDesc.replace(pluralCardName, "$cardnameplural$")
 
+	quotations = cardDesc.split('\"')[1::2]
+	newQuotations = []
+	quoteIndex = 0
+	for quotation in quotations:
+		coolQuotation = "\"%s\""%quotation
+		if not coolQuotation in newQuotations:
+			newQuotations.append(coolQuotation)
+			cardDesc = cardDesc.replace(coolQuotation, "$%d$"%quoteIndex)
+			quoteIndex+=1
+	
+
 	cardDesc = cardDesc.replace("\r", "")
 	cardDesc = cardDesc.replace("[ Pendulum Effect ]\n", "[ Pendulum Effect ]")
 	cardDesc = cardDesc.replace("[ Monster Effect ]\n", "[ Monster Effect ]")
@@ -208,7 +219,12 @@ def formatDesc(card):
 	boldCardNamePlural = "**%s(s)**"%cardName
 
 	cardDesc = cardDesc.replace("$cardname$", boldCardName)
-	cardDesc = cardDesc.replace("$cardnameplural", boldCardNamePlural)
+	cardDesc = cardDesc.replace("$cardnameplural$", boldCardNamePlural)
+
+	quoteIndex = 0
+	for quotation in newQuotations:
+		cardDesc = cardDesc.replace("$%d$"%quoteIndex, "**%s**"%quotation)
+		quoteIndex+=1
 
 	for cleanupItem in cleanupList:
 		while cleanupItem.get(ALIAS_BEFORE_KEY) in cardDesc:

@@ -22,6 +22,8 @@ from src.deck_validation import Ydk
 from src.deck_images import DeckAsImageGenerator
 from src.tournaments import TournamentManager
 from src.duelingbook_deck_download import DuelingbookManager
+from src.usermanager import UserManager
+from src.file_uploader import FileUploader
 import src.strings as Strings
 
 # Configuration
@@ -917,6 +919,82 @@ async def get_readable_decklist(interaction: discord.Interaction, player_name: s
 	else:
 		await interaction.response.send_message(result.getMessage())
 
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE, description="Removes every player that is present in challonge but not locally")
+async def cleanup_challonge(interaction:discord.Interaction):
+	"""Removes every player that is present in challonge but not locally"""
+
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, True)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+
+	await interaction.response.defer(ephemeral=True)
+	manager = TournamentManager(credentials, serverId)
+	players = manager.getTournamentPlayers()
+	challongePlayers = manager.getChallongePlayers()
+	unsynced = []
+	for challongePlayer in challongePlayers:
+		unsynced.append(challongePlayer)
+
+	for challongePlayer in challongePlayers:
+		for player in players:
+			if (player.username == challongePlayer):
+				unsynced.remove(challongePlayer)
+
+	for playername in unsynced:
+		manager.drop(playername)
+	
+	if len(unsynced) > 0:
+		message = "The following players have been removed from the tournament: \n\n"
+		for player in unsynced:
+			lastMessage = message
+			message = message + player + "\n"
+			if len(message) > 2000:
+				await interaction.followup.send(lastMessage)
+				message = player + "\n"
+		await interaction.followup.send(message)
+	else:
+		await interaction.followup.send("No players were unsynced")
+
+
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_DQ_UNREGISTERED, description="Removes every player with no submitted decklist from the tournament.")
+async def dq_unsubmitted_players(interaction: discord.Interaction):
+
+	"""Removes every player with no submitted decklist from the tournament."""
+
+	serverId = interaction.guild_id
+	channelName = getChannelName(interaction.channel)
+	result = canCommandExecute(interaction, True)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+
+	await interaction.response.defer(ephemeral=True)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+	manager = TournamentManager(credentials, serverId)
+	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+	playersWithADeck = deckCollectionManager.getRegisteredPlayers()
+	players = manager.getTournamentPlayers()
+	noDeck:List[str] = []
+	for player in players:
+		if not player.username in playersWithADeck:
+			identifier = "<@" + str(player.discordId) + ">"
+			noDeck.append(identifier)
+			manager.drop(player.username)
+	
+	if len(noDeck) > 0:
+		message = "The following players have been removed from the tournament: \n\n"
+		for player in noDeck:
+			lastMessage = message
+			message = message + player + "\n"
+			if len(message) > 2000:
+				await interaction.followup.send(lastMessage)
+				message = player + "\n"
+		await interaction.followup.send(message)
+	else:
+		await interaction.followup.send("There are no players who haven't submitted a deck")
+
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_LIST_PLAYERS_WITH_NO_DECK, description="Lists all players that have registered to a tournament and haven't submitted a decklist.")
 async def list_unsubmitted_players(interaction: discord.Interaction):
@@ -934,18 +1012,22 @@ async def list_unsubmitted_players(interaction: discord.Interaction):
 	forcedFormat = config.getForcedFormat(channelName, serverId)
 	manager = TournamentManager(credentials, serverId)
 	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
-
+	playersWithADeck = deckCollectionManager.getRegisteredPlayers()
 	players = manager.getTournamentPlayers()
 	noDeck:List[str] = []
 	for player in players:
-		if not(player.hasDeck):
+		if not player.username in playersWithADeck:
 			identifier = "<@" + str(player.discordId) + ">"
 			noDeck.append(identifier)
 	
 	if len(noDeck) > 0:
 		message = "List of players who have joined the tournament but don't have a deck: \n\n"
 		for player in noDeck:
+			lastMessage = message
 			message = message + player + "\n"
+			if len(message) > 2000:
+				await interaction.followup.send(lastMessage)
+				message = player + "\n"
 		await interaction.followup.send(message)
 	else:
 		await interaction.followup.send("There are no players who haven't submitted a deck")
@@ -1034,7 +1116,7 @@ async def get_img_deck(interaction: discord.Interaction, player_name: str):
 			deck = deckFile.read()
 			ydk = Ydk(deck)
 
-			image = deckImages.buildImageFromDeck(ydk.getDeck())
+			image = deckImages.buildImageFromDeck(ydk.getDeck(), player_name)
 
 			await interaction.followup.send(file=File(filename="deck.png", fp=image))
 			os.remove(image)
@@ -1061,6 +1143,31 @@ async def download_zip(interaction: discord.Interaction):
 		os.remove(decks)
 	else:
 		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_GET_ALL_DECK_IMGS, description="Returns a download link for a .zip file with all registered decks as images")
+async def download_zip(interaction: discord.Interaction):
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, True)
+	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+			return
+		await interaction.response.defer(ephemeral=True)
+		channelName = getChannelName(interaction.channel)
+		forcedFormat = config.getForcedFormat(channelName, serverId)
+		deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
+		
+		decks = deckCollectionManager.getAllDecks()
+		deckZip = deckImages.zipDecks(decks)
+		uploader = FileUploader()
+		fileUrl = uploader.uploadFile(deckZip)
+
+		await interaction.followup.send(fileUrl)
+		os.remove(deckZip)
+	else:
+		await interaction.response.send_message(result.getMessage())
+
 
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CONFIRM_DECK, description="Shows the deck you have currently registered")
@@ -1093,7 +1200,7 @@ async def confirm_deck(interaction: discord.Interaction):
 			deck = deckFile.read()
 			ydk = Ydk(deck)
 
-			image = deckImages.buildImageFromDeck(ydk.getDeck())
+			image = deckImages.buildImageFromDeck(ydk.getDeck(), player_name)
 
 			await interaction.followup.send(file=File(filename="deck.png", fp=image))
 			os.remove(image)
@@ -1252,7 +1359,7 @@ async def end_tournament(interaction: discord.Interaction):
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_INFO, description="Gets the tournament url")
 async def tournament_info(interaction: discord.Interaction):
-	result = canCommandExecute(interaction, True)
+	result = canCommandExecute(interaction, False)
 	if not result.wasSuccessful():
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 		return
@@ -1273,8 +1380,7 @@ async def register_to_tournament(interaction: discord.Interaction):
 
 	manager = getTournamentManager(interaction)
 
-	player_name = "%s#%s" % (interaction.user.name,
-							 interaction.user.discriminator)
+	player_name = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
 	player_id = interaction.user.id
 
 	result = manager.registerToTournament(player_name, player_id)
@@ -1321,6 +1427,40 @@ async def submit_deck(interaction: discord.Interaction, ydk: discord.Attachment)
 				await interaction.followup.send(result.getMessage())
 	else:
 		await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
+
+@bot.tree.command(name=Strings.COMMAND_NAME_SET_DB_NAME, description="Sets your Duelingbook name for a tournament")
+async def set_db_name(interaction:discord.Interaction, db_name:str):
+	result = canCommandExecute(interaction, False)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage())
+		return
+
+	await interaction.response.defer(ephemeral = True)
+	if len(db_name) == 0:
+		await interaction.followup.send("Username can't be empty")
+		return
+	
+	manager = UserManager(interaction.guild_id)
+	playerName = "%s#%s" % (interaction.user.name,
+							interaction.user.discriminator)
+	manager.setDBUsername(playerName, db_name)
+	await interaction.followup.send("Duelingbook username set successfully to %s" % db_name)
+
+
+@bot.tree.command(name=Strings.COMMAND_NAME_GET_DB_NAME, description="Gets the Duelinbgook username for an user.")
+async def get_db_name(interaction:discord.Interaction, player_name:str):
+	result = canCommandExecute(interaction, False)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage())
+		return
+	
+	await interaction.response.defer(ephemeral=True)
+	manager = UserManager(interaction.guild_id)
+	dbName = manager.getDBUsername(player_name)
+	if dbName == None:
+		await interaction.followup.send("%s does not have a Duelingbook username set" % player_name)
+		return
+	await interaction.followup.send(dbName)
 
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_SUBMIT_DB_DECK, description="Submits a duelingbook list for a tournament")
@@ -1376,7 +1516,7 @@ async def report_tournament_loss(interaction: discord.Interaction):
 	if not result.wasSuccessful():
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 		return
-	await interaction.response.defer(ephemeral=True)
+	await interaction.response.defer(ephemeral=False)
 	serverId = interaction.guild_id
 	player_name = "%s#%s" % (interaction.user.name,
 							 interaction.user.discriminator)
@@ -1391,7 +1531,7 @@ async def force_tournament_loss(interaction: discord.Interaction, player_name: s
 	if not result.wasSuccessful():
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 		return
-	await interaction.response.defer(ephemeral=True)
+	await interaction.response.defer(ephemeral=False)
 	serverId = interaction.guild_id
 	serverId = interaction.guild_id
 	manager = TournamentManager(credentials, serverId)
@@ -1439,6 +1579,59 @@ async def active_matches(interaction: discord.Interaction):
 	result = manager.getReadableActiveMatches()
 	await interaction.followup.send(result.getMessage())
 
+@bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_YDK, description="Shares an image of a YDK deck")
+async def share_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, False)
+	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+			return
+		await interaction.response.defer(ephemeral=True)
+		if ydk.filename.endswith(".ydk"):
+			ydkAsString = await ydk.read()
+			ydkAsString = ydkAsString.decode("utf-8")
+			ydk = Ydk(ydkAsString)
+
+			image = deckImages.buildImageFromDeck(ydk.getDeck(), "temp")
+
+			await interaction.followup.send(file=File(filename="deck.png", fp=image))
+			os.remove(image)
+		else:
+			await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+@bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_DB, description="Shares an image of a Duelingbook deck")
+async def share_ydk(interaction: discord.Interaction, db_url:str):
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, False)
+	if result.wasSuccessful():
+		supportedFormats = config.getSupportedFormats(serverId)
+		if len(supportedFormats) == 0:
+			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+			return
+		await interaction.response.defer(ephemeral=True)
+
+		manager = DuelingbookManager()
+		playerName = "temp"
+		result = manager.isValidDuelingbookUrl(db_url)
+		if not result.wasSuccessful():
+			await interaction.followup.send(result.getMessage())
+			return
+
+		deck = manager.getYDKFromDuelingbookURL(playerName, db_url)
+		ydk = Ydk(deck)
+		image = deckImages.buildImageFromDeck(ydk.getDeck(), "temp")
+
+		await interaction.followup.send(file=File(filename="deck.png", fp=image))
+		os.remove(image)
+
+	else:
+		await interaction.response.send_message(result.getMessage())
+
+
 # Autocomplete functions
 
 
@@ -1481,11 +1674,24 @@ async def player_autocomplete_for_tournament(interaction: discord.Interaction, c
 	for player in players:
 		if current.lower() in player.username.lower():
 			if len(choices) < 25:
-				choice = app_commands.Choice(
-					name=player.username, value=player.username)
+				choice = app_commands.Choice(name=player.username, value=player.username)
 				choices.append(choice)
 
 	return choices
+
+
+@get_db_name.autocomplete("player_name")
+async def player_autocomplete_for_db(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+	choices: List[app_commands.Choice[str]] = []
+	manager = UserManager(interaction.guild_id)
+	players = manager.getPartialUsernameMatches(current)
+	for player in players:
+		if len(choices) < 25:
+			choice = app_commands.Choice(name=player, value=player)
+			choices.append(choice)
+	
+	return choices
+
 
 
 @get_img_deck.autocomplete("player_name")

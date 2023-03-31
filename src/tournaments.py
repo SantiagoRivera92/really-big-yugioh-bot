@@ -14,6 +14,7 @@ URL_KEY = 'full_challonge_url'
 ID_KEY = 'id'
 CHALLONGE_PLAYER_ID_KEY = 'challonge_id'
 NAME_KEY = 'name'
+DB_NAME_KEY = "dbName"
 PLAYERS_KEY = 'players'
 OPEN_KEY = 'open'
 STATE_KEY = 'state'
@@ -47,11 +48,15 @@ class Player:
 		self.username = username
 		self.discordId = discordId
 		self.challongeId = 0
+		self.dbName = ""
 		self.hasDeck = False
 		self.deckPath = None
 	
 	def setChallongePlayerId(self, challongeId: int):
 		self.challongeId = challongeId
+
+	def setDbName(self, dbName:str):
+		self.dbName = dbName
 
 	def setDeckPath(self, deckPath:str):
 		if not deckPath == None:
@@ -66,6 +71,7 @@ class Player:
 		dict[NAME_KEY] = self.username
 		dict[ID_KEY] = self.discordId
 		dict[CHALLONGE_PLAYER_ID_KEY] = self.challongeId
+		dict[DB_NAME_KEY] = self.dbName
 		dict[HAS_DECK_KEY] = self.hasDeck
 		dict[DECK_PATH_KEY] = self.deckPath
 		return dict
@@ -85,6 +91,7 @@ def playerFromResponse(playerAsDict:dict):
 	player = Player(username, discordId)
 	challongeId = playerAsDict[CHALLONGE_PLAYER_ID_KEY]
 	player.setChallongePlayerId(challongeId)
+	player.setDbName(playerAsDict[DB_NAME_KEY])
 	deckPath = playerAsDict[DECK_PATH_KEY]
 	if deckPath != None:
 		player.setDeckPath(deckPath)
@@ -185,8 +192,9 @@ class Tournament:
 		self.save()
 
 	def removePlayer(self, playername:str):
-		if playername in self.players:
-			self.players.remove(playername)
+		player = self.getPlayerForName(playername)
+		if player != None:
+			self.players.remove(player)
 			self.save()
 			if self.isOpen():
 				return OperationResult(True, Strings.BOT_MESSAGE_DROPPED % playername)
@@ -322,10 +330,12 @@ class TournamentManager:
 		return openMatches
 
 	def reportLoss(self, playerName:str):
+		self.updateChallongeIdsForAllPlayers()
 		tournament = getTournamentForServer(self.serverId)
 		player = tournament.getPlayerForName(playerName)
 		playerId = player.getChallongePlayerId()
 		matches = self.getActiveMatches()
+		print(playerId)
 		for match in matches:
 			if match[PLAYER_1_ID_KEY] == playerId or match[PLAYER_2_ID_KEY] == playerId:
 				# This is the match
@@ -345,13 +355,25 @@ class TournamentManager:
 
 		return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_MATCH % playerName)
 
+	def updateChallongeIdsForAllPlayers(self):
+		tournament = getTournamentForServer(self.serverId)
+		players = challonge.participants.index(tournament.id)
+		for player in tournament.players:
+			for challongePlayer in players:
+				if player.username == challongePlayer['name']:
+					player.challongeId = challongePlayer['id']
+		tournament.save()
+
 	def registerToTournament(self, playerName: str, playerId: int):
 		tournament = getTournamentForServer(self.serverId)
 		if tournament == None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
 		if tournament.isOpen():
 			if tournament.getPlayerForName(playerName) == None:
+				print("Adding %s to the tournament" % playerName)
+				result = tournament.addPlayer(playerName, playerId)
 				challonge.participants.create(tournament.id, playerName)
+				return result
 			else:
 				return OperationResult(False, Strings.ERROR_MESSAGE_PLAYER_ALREADY_JOINED)
 		return tournament.addPlayer(playerName, playerId)
@@ -360,8 +382,14 @@ class TournamentManager:
 		tournament = getTournamentForServer(self.serverId)
 		if tournament == None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
-		challonge.participants.destroy(tournament.id, playerName)
-		return tournament.removePlayer(playerName)
+		print ("Removing %s from the tournament" % playerName)
+		result = tournament.removePlayer(playerName)
+		participants = challonge.participants.index(tournament.id)
+		for participant in participants:
+			if (participant['name'] == playerName):
+				playerId = participant['id']
+				challonge.participants.destroy(tournament.id,playerId)
+		return result
 
 	def getTournamentInfo(self):
 		tournament = getTournamentForServer(self.serverId)
@@ -416,6 +444,24 @@ class TournamentManager:
 			activeMatches = activeMatches + "\n<@%d> vs <@%d>" % (p1.discordId, p2.discordId)
 		return OperationResult(True, activeMatches)
 
+	def setDbName(self, playername:str, dbname:str):
+		tournament = self.getTournamentForServer()
+		player = tournament.getPlayerForName(playername)
+		if (player == None):
+			return OperationResult(False, "You aren't registered for the tournament")
+		player.setDbName(dbname)
+		tournament.save()
+		return OperationResult(True, "Your Duelingbook name was updated to: %s"%dbname)
+
+	def getDbName(self, playername:str):
+		tournament = self.getTournamentForServer()
+		player = tournament.getPlayerForName(playername)
+		if (player == None):
+			return OperationResult(False, "%s isn't registered for the tournament" % playername)
+		if (player.dbName == ""):
+			return OperationResult(False, "%s hasn't set their Duelingbook username" % playername)
+		return OperationResult(True, player.dbName)
+
 	def cleardecks(self):
 		tournament = self.getTournamentForServer()
 		if not tournament == None:
@@ -427,3 +473,11 @@ class TournamentManager:
 	def getTournamentPlayers(self):
 		tournament = self.getTournamentForServer()
 		return tournament.players
+
+	def getChallongePlayers(self):
+		tournament = self.getTournamentForServer()
+		participants = challonge.participants.index(tournament.id)
+		playerList: List[str] = []
+		for participant in participants:
+			playerList.append(participant['name'])
+		return playerList
