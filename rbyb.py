@@ -1487,47 +1487,6 @@ async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
 
 	await interaction.followup.send(result.getMessage())
 
-
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_SUBMIT_DECK, description="Submits a deck in .ydk format for a tournament")
-async def submit_deck(interaction: discord.Interaction, ydk: discord.Attachment):
-	serverId = interaction.guild_id
-	result = canCommandExecute(interaction, False)
-	if not result.wasSuccessful():
-		await interaction.response.send_message(result.getMessage())
-		return
-
-	await interaction.response.defer(ephemeral=True)
-
-	manager = getTournamentManager(interaction)
-	forcedFormat = manager.getTournamentFormat()
-	if forcedFormat == None:
-		await interaction.followup.send("There is no ongoing tournament in this server")
-		return
-
-	if ydk.filename.endswith(".ydk"):
-		channelName = getChannelName(interaction.channel)
-		forcedFormat = config.getForcedFormat(channelName, serverId)
-		banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
-		if config.isFormatSupported(forcedFormat, serverId):
-			ydkFile = await ydk.read()
-			ydkFile = ydkFile.decode("utf-8")
-			result = deckValidator.validateDeck(ydkFile, banlistFile)
-			if result.wasSuccessful():
-				deckCollectionManager = DeckCollectionManager(
-					forcedFormat, serverId)
-				playerName = "%s#%s" % (
-					interaction.user.name, interaction.user.discriminator)
-				result = deckCollectionManager.addDeck(playerName, ydkFile)
-				if result.wasSuccessful():
-					path = deckCollectionManager.getDecklistForPlayer(
-						playerName)
-					result = manager.setDeckForPlayer(playerName, path)
-				await interaction.followup.send(result.getMessage())
-			else:
-				await interaction.followup.send(result.getMessage())
-	else:
-		await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
-
 @bot.tree.command(name=Strings.COMMAND_NAME_SET_DB_NAME, description="Sets your Duelingbook name for a tournament")
 async def set_db_name(interaction:discord.Interaction, db_name:str):
 	result = canCommandExecute(interaction, False)
@@ -1561,54 +1520,6 @@ async def get_db_name(interaction:discord.Interaction, player_name:str):
 		await interaction.followup.send("%s does not have a Duelingbook username set" % player_name)
 		return
 	await interaction.followup.send(dbName)
-
-
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_SUBMIT_DB_DECK, description="Submits a duelingbook list for a tournament")
-async def submit_deck(interaction: discord.Interaction, db_url: str):
-	serverId = interaction.guild_id
-	result = canCommandExecute(interaction, False)
-	if not result.wasSuccessful():
-		await interaction.response.send_message(result.getMessage())
-		return
-
-	supportedFormats = config.getSupportedFormats(serverId)
-	if len(supportedFormats) == 0:
-		await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
-		return
-	await interaction.response.defer(ephemeral=True)
-
-	manager = DuelingbookManager()
-	playerName = "%s#%s" % (interaction.user.name,
-							interaction.user.discriminator)
-	result = manager.isValidDuelingbookUrl(db_url)
-	if not result.wasSuccessful():
-		await interaction.followup.send(result.getMessage())
-		return
-
-	deck = manager.getYDKFromDuelingbookURL(playerName, db_url)
-	channelName = getChannelName(interaction.channel)
-	forcedFormat = config.getForcedFormat(channelName, serverId)
-	if forcedFormat == None:
-		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
-	else:
-		banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
-		if config.isFormatSupported(forcedFormat, serverId):
-			result = deckValidator.validateDeck(deck, banlistFile)
-			if result.wasSuccessful():
-				deckCollectionManager = DeckCollectionManager(
-					forcedFormat, serverId)
-				playerName = "%s#%s" % (
-					interaction.user.name, interaction.user.discriminator)
-				result = deckCollectionManager.addDeck(playerName, deck)
-				if result.wasSuccessful():
-					manager = getTournamentManager(interaction)
-					path = deckCollectionManager.getDecklistForPlayer(
-						playerName)
-					result = manager.setDeckForPlayer(playerName, path)
-				await interaction.followup.send(result.getMessage())
-			else:
-				await interaction.followup.send(result.getMessage())
-
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_REPORT_LOSS, description="Reports you lost a tournament match")
 async def report_tournament_loss(interaction: discord.Interaction):
