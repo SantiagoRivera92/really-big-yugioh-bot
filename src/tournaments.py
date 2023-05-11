@@ -1,5 +1,5 @@
 import challonge
-from challonge.api import ChallongeException
+from challonge import APIException
 from src.credentials_manager import CredentialsManager
 from src.utils import OperationResult
 import os
@@ -267,7 +267,7 @@ class TournamentManager:
 			tournament = Tournament(self.serverId)
 			tournament.setUrl(tournamentDict[URL_KEY]).setId(tournamentDict[ID_KEY]).setName(tournamentName).setFormat(formatName).open().save()
 			return OperationResult(True, Strings.BOT_MESSAGE_TOURNAMENT_CREATED % (tournamentName, tournament.getUrl()))
-		except ChallongeException as exception:
+		except APIException as exception:
 			return OperationResult(False, str(exception))
 
 	def getTournamentFromChallonge(self):

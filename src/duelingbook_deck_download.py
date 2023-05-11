@@ -58,6 +58,10 @@ class DuelingbookManager:
     def getYDKFromDuelingbookURL(self, playerName:str, duelingbookURL:str):
         deck = getDeckAsJSON(duelingbookURL)
         return duelingbookDeckToYdk(deck, playerName)
+    
+    def getDeckNameFromDuelingbookURL(self, duelingbookURL:str):
+        deck = getDeckAsJSON(duelingbookURL)
+        return deck['name']
 
     def isValidDuelingbookUrl(self, duelingbookURL:str):
         if "duelingbook.com/deck" in duelingbookURL:

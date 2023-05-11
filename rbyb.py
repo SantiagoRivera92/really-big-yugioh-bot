@@ -5,6 +5,7 @@ from typing import List
 
 from discord import app_commands
 from discord import File
+from discord import Embed
 
 from src.deck_validation import DeckValidator
 from src.banlist_validation import BanlistValidator
@@ -1369,14 +1370,113 @@ async def tournament_info(interaction: discord.Interaction):
 
 	await interaction.followup.send(manager.getTournamentInfo().getMessage())
 
-
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN, description="Registers to an open tournament.")
-async def register_to_tournament(interaction: discord.Interaction):
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN, description="Registers to an open tournament using a ydk decklist.")
+async def register_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
 	result = canCommandExecute(interaction, False)
+	serverId = interaction.guild_id
 	if not result.wasSuccessful():
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 		return
 	await interaction.response.defer(ephemeral=True)
+
+	manager = getTournamentManager(interaction)
+	forcedFormat = manager.getTournamentFormat()
+	if forcedFormat == None:
+		await interaction.followup.send("There is no ongoing tournament in this server")
+		return
+
+	if ydk.filename.endswith(".ydk"):
+		channelName = getChannelName(interaction.channel)
+		forcedFormat = config.getForcedFormat(channelName, serverId)
+		banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
+		if config.isFormatSupported(forcedFormat, serverId):
+			ydkFile = await ydk.read()
+			ydkFile = ydkFile.decode("utf-8")
+			result = deckValidator.validateDeck(ydkFile, banlistFile)
+			if result.wasSuccessful():
+				deckCollectionManager = DeckCollectionManager(
+					forcedFormat, serverId)
+				playerName = "%s#%s" % (
+					interaction.user.name, interaction.user.discriminator)
+				result = deckCollectionManager.addDeck(playerName, ydkFile)
+				if result.wasSuccessful():
+					path = deckCollectionManager.getDecklistForPlayer(
+						playerName)
+					result = manager.setDeckForPlayer(playerName, path)
+			else:
+				await interaction.followup.send(result.getMessage())
+				return
+	else:
+		await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
+		return
+
+	manager = getTournamentManager(interaction)
+
+	player_name = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
+	player_id = interaction.user.id
+
+	result = manager.registerToTournament(player_name, player_id)
+
+	await interaction.followup.send(result.getMessage())
+
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN, description="Registers to an open tournament using a duelingbook url.")
+async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
+	result = canCommandExecute(interaction, False)
+	serverId = interaction.guild_id
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage(), ephemeral=True)
+		return
+	await interaction.response.defer(ephemeral=True)
+
+	manager = getTournamentManager(interaction)
+	forcedFormat = manager.getTournamentFormat()
+	if forcedFormat == None:
+		await interaction.followup.send("There is no ongoing tournament in this server")
+		return
+
+	serverId = interaction.guild_id
+	result = canCommandExecute(interaction, False)
+	if not result.wasSuccessful():
+		await interaction.response.send_message(result.getMessage())
+		return
+
+	supportedFormats = config.getSupportedFormats(serverId)
+	if len(supportedFormats) == 0:
+		await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+		return
+	await interaction.response.defer(ephemeral=True)
+
+	manager = DuelingbookManager()
+	playerName = "%s#%s" % (interaction.user.name,
+							interaction.user.discriminator)
+	result = manager.isValidDuelingbookUrl(duelingbook_link)
+	if not result.wasSuccessful():
+		await interaction.followup.send(result.getMessage())
+		return
+
+	deck = manager.getYDKFromDuelingbookURL(playerName, duelingbook_link)
+	channelName = getChannelName(interaction.channel)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+	if forcedFormat == None:
+		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
+	else:
+		banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
+		if config.isFormatSupported(forcedFormat, serverId):
+			result = deckValidator.validateDeck(deck, banlistFile)
+			if result.wasSuccessful():
+				deckCollectionManager = DeckCollectionManager(
+					forcedFormat, serverId)
+				playerName = "%s#%s" % (
+					interaction.user.name, interaction.user.discriminator)
+				result = deckCollectionManager.addDeck(playerName, deck)
+				if result.wasSuccessful():
+					manager = getTournamentManager(interaction)
+					path = deckCollectionManager.getDecklistForPlayer(
+						playerName)
+					result = manager.setDeckForPlayer(playerName, path)
+			else:
+				await interaction.followup.send(result.getMessage())
+				return
 
 	manager = getTournamentManager(interaction)
 
@@ -1588,16 +1688,31 @@ async def share_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
 		if len(supportedFormats) == 0:
 			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			return
-		await interaction.response.defer(ephemeral=True)
+		await interaction.response.defer(ephemeral=False)
 		if ydk.filename.endswith(".ydk"):
 			ydkAsString = await ydk.read()
 			ydkAsString = ydkAsString.decode("utf-8")
-			ydk = Ydk(ydkAsString)
+			ydkNative = Ydk(ydkAsString)
 
-			image = deckImages.buildImageFromDeck(ydk.getDeck(), "temp")
+			image = deckImages.buildImageFromDeck(ydkNative.getDeck(), "temp")
+			with open("img/decks/temp.ydk", 'w') as file:
+				deckAsLines = ydkAsString.split("\n")
+				for line in deckAsLines:
+					line = line.replace("\n", "").replace("\r", "")
+					if len(line) > 0:
+						file.write(line)
+						file.write("\n")
 
-			await interaction.followup.send(file=File(filename="deck.png", fp=image))
-			os.remove(image)
+			filename = ydk.filename.replace("_", " ")[:-4]
+
+			embed = Embed(title=filename)
+			embed.set_image(url="attachment://deck.png")
+
+			with open(image, "rb") as fp:
+				image_file = File(fp, filename="deck.png")
+
+			await interaction.followup.send(embed=embed, file=image_file)
+
 		else:
 			await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
 	else:
@@ -1612,7 +1727,7 @@ async def share_ydk(interaction: discord.Interaction, db_url:str):
 		if len(supportedFormats) == 0:
 			await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 			return
-		await interaction.response.defer(ephemeral=True)
+		await interaction.response.defer(ephemeral=False)
 
 		manager = DuelingbookManager()
 		playerName = "temp"
@@ -1622,11 +1737,18 @@ async def share_ydk(interaction: discord.Interaction, db_url:str):
 			return
 
 		deck = manager.getYDKFromDuelingbookURL(playerName, db_url)
+		deckName = manager.getDeckNameFromDuelingbookURL(db_url)
 		ydk = Ydk(deck)
 		image = deckImages.buildImageFromDeck(ydk.getDeck(), "temp")
 
-		await interaction.followup.send(file=File(filename="deck.png", fp=image))
-		os.remove(image)
+		embed = Embed(title=deckName)
+		embed.set_image(url="attachment://deck.png")
+		embed.add_field(name="", value=f"[See deck in Duelingbook](%s)" % db_url)
+
+		with open(image, "rb") as fp:
+			image_file = File(fp, filename="deck.png")
+
+		await interaction.followup.send(embed=embed, file=image_file)
 
 	else:
 		await interaction.response.send_message(result.getMessage())
