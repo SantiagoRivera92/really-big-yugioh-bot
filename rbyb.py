@@ -1370,7 +1370,7 @@ async def tournament_info(interaction: discord.Interaction):
 
 	await interaction.followup.send(manager.getTournamentInfo().getMessage())
 
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN, description="Registers to an open tournament using a ydk decklist.")
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN_YDK, description="Registers to an open tournament using a .ydk, or updates your deck if already registered")
 async def register_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
 	result = canCommandExecute(interaction, False)
 	serverId = interaction.guild_id
@@ -1414,12 +1414,13 @@ async def register_ydk(interaction: discord.Interaction, ydk: discord.Attachment
 
 	player_name = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
 	player_id = interaction.user.id
-
-	result = manager.registerToTournament(player_name, player_id)
+ 
+	if not player_name in manager.getChallongePlayers():
+		result = manager.registerToTournament(player_name, player_id)
 
 	await interaction.followup.send(result.getMessage())
 
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN, description="Registers to an open tournament using a duelingbook url.")
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN_DB, description="Registers to a tournament using a db url, or updates your deck if already registered.")
 async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
 	result = canCommandExecute(interaction, False)
 	serverId = interaction.guild_id
@@ -1444,7 +1445,6 @@ async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
 	if len(supportedFormats) == 0:
 		await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 		return
-	await interaction.response.defer(ephemeral=True)
 
 	manager = DuelingbookManager()
 	playerName = "%s#%s" % (interaction.user.name,
@@ -1480,10 +1480,10 @@ async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
 
 	manager = getTournamentManager(interaction)
 
-	player_name = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
 	player_id = interaction.user.id
 
-	result = manager.registerToTournament(player_name, player_id)
+	if not playerName in manager.getChallongePlayers():
+		result = manager.registerToTournament(playerName, player_id)
 
 	await interaction.followup.send(result.getMessage())
 

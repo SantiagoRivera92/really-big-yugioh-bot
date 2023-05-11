@@ -264,34 +264,17 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 				formattedType = formattedType.replace(" Effect", "")
 				formattedType = formattedType.replace(" ", "/")
 			if len(typeEmoji) > 0:
-				formattedCardType = "%s %s" % (attributeEmoji, typeEmoji)
+				formattedCardType = "%s %s" % (attributeEmoji, typeEmoji) 
 			else:
 				formattedCardType = "%s / %s" % (attributeEmoji, race)
 		else:
 			formattedCardType = "%s / %s"%(attributeEmoji, typeEmoji)
 		if TYPE_XYZ in cType:
-			if level > 0:
-				i = 1
-				lvEmoji = ""
-				while i <= level:
-					lvEmoji = "%s%s" % (lvEmoji, EMOJI_RANK)
-					i+=1
-				lvEmoji = "%s (%d)" % (lvEmoji, level)
-				embed.add_field(name="Rank", value=lvEmoji, inline=False)
-			else:
-				embed.add_field(name="Rank", value=level, inline=False)
-
+			text = "%s Rank"%EMOJI_RANK
+			embed.add_field(name=text, value=level)
 		elif not TYPE_LINK in cType:
-			if level > 0:
-				i = 1
-				lvEmoji = ""
-				while i <= level:
-					lvEmoji = "%s%s" % (lvEmoji, EMOJI_LEVEL)
-					i+=1
-				lvEmoji = "%s (%d)" % (lvEmoji, level)
-				embed.add_field(name="Level", value=lvEmoji, inline=False)
-			else:
-				embed.add_field(name="Level", value=level, inline=False)
+			text = "%s Level"%EMOJI_LEVEL
+			embed.add_field(name=text, value=level)
 		embed.add_field(name="Card type", value=formattedCardType, inline=False)
 	else:
 		formattedType = cType.replace(" Card", "")
