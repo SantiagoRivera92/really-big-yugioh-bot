@@ -959,80 +959,6 @@ async def cleanup_challonge(interaction:discord.Interaction):
 		await interaction.followup.send("No players were unsynced")
 
 
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_DQ_UNREGISTERED, description="Removes every player with no submitted decklist from the tournament.")
-async def dq_unsubmitted_players(interaction: discord.Interaction):
-
-	"""Removes every player with no submitted decklist from the tournament."""
-
-	serverId = interaction.guild_id
-	channelName = getChannelName(interaction.channel)
-	result = canCommandExecute(interaction, True)
-	if not result.wasSuccessful():
-		await interaction.response.send_message(result.getMessage(), ephemeral=True)
-		return
-
-	await interaction.response.defer(ephemeral=True)
-	forcedFormat = config.getForcedFormat(channelName, serverId)
-	manager = TournamentManager(credentials, serverId)
-	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
-	playersWithADeck = deckCollectionManager.getRegisteredPlayers()
-	players = manager.getTournamentPlayers()
-	noDeck:List[str] = []
-	for player in players:
-		if not player.username in playersWithADeck:
-			identifier = "<@" + str(player.discordId) + ">"
-			noDeck.append(identifier)
-			manager.drop(player.username)
-	
-	if len(noDeck) > 0:
-		message = "The following players have been removed from the tournament: \n\n"
-		for player in noDeck:
-			lastMessage = message
-			message = message + player + "\n"
-			if len(message) > 2000:
-				await interaction.followup.send(lastMessage)
-				message = player + "\n"
-		await interaction.followup.send(message)
-	else:
-		await interaction.followup.send("There are no players who haven't submitted a deck")
-
-
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_LIST_PLAYERS_WITH_NO_DECK, description="Lists all players that have registered to a tournament and haven't submitted a decklist.")
-async def list_unsubmitted_players(interaction: discord.Interaction):
-
-	"""Lists all players that have registered to a tournament and haven't submitted a decklist."""
-
-	serverId = interaction.guild_id
-	channelName = getChannelName(interaction.channel)
-	result = canCommandExecute(interaction, False)
-	if not result.wasSuccessful():
-		await interaction.response.send_message(result.getMessage(), ephemeral=True)
-		return
-
-	await interaction.response.defer(ephemeral=True)
-	forcedFormat = config.getForcedFormat(channelName, serverId)
-	manager = TournamentManager(credentials, serverId)
-	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
-	playersWithADeck = deckCollectionManager.getRegisteredPlayers()
-	players = manager.getTournamentPlayers()
-	noDeck:List[str] = []
-	for player in players:
-		if not player.username in playersWithADeck:
-			identifier = "<@" + str(player.discordId) + ">"
-			noDeck.append(identifier)
-	
-	if len(noDeck) > 0:
-		message = "List of players who have joined the tournament but don't have a deck: \n\n"
-		for player in noDeck:
-			lastMessage = message
-			message = message + player + "\n"
-			if len(message) > 2000:
-				await interaction.followup.send(lastMessage)
-				message = player + "\n"
-		await interaction.followup.send(message)
-	else:
-		await interaction.followup.send("There are no players who haven't submitted a deck")
-
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEAR_DECKS, description="Clears every decklist from the active tournament.")
 async def list_unsubmitted_players(interaction: discord.Interaction):
 
@@ -1163,8 +1089,11 @@ async def download_zip(interaction: discord.Interaction):
 		deckZip = deckImages.zipDecks(decks)
 		uploader = FileUploader()
 		fileUrl = uploader.uploadFile(deckZip)
-
-		await interaction.followup.send(fileUrl)
+  
+		if fileUrl != None:
+			await interaction.followup.send(fileUrl)
+		else:
+			await interaction.followup.send("The upload of the zip file failed. Please contact Diamond Dude to get the file manually.")
 		os.remove(deckZip)
 	else:
 		await interaction.response.send_message(result.getMessage())

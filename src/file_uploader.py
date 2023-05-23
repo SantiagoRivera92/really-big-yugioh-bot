@@ -13,3 +13,4 @@ class FileUploader:
 				return url
 		except Exception as e:
 			print(f"Error uploading file: {e}")
+			return None

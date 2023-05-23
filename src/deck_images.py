@@ -4,7 +4,6 @@ from src.deck_collection import Deck as CollectionDeck
 from src.card_collection import CardCollection
 from typing import List
 import shutil
-import time
 import os
 
 mainDeckMargin = 6
