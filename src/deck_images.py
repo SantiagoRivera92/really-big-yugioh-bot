@@ -191,6 +191,6 @@ class DeckAsImageGenerator:
 		draw.text((headerTextX, headerTextY), headerText, font=headerFont, fill=(255, 255, 255))
 
 		filename = "./img/decks/%s.jpg" % filename
+		deckImage = deckImage.resize((width//2, height//2))
 		deckImage.save(filename)
 		return filename
-
