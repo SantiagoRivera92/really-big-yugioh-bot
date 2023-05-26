@@ -1,3 +1,11 @@
+# Pycache stuff
+
+import sys
+
+sys.dont_write_bytecode = True
+
+# Imports
+
 import discord
 import os
 
@@ -25,7 +33,9 @@ from src.tournaments import TournamentManager
 from src.duelingbook_deck_download import DuelingbookManager
 from src.usermanager import UserManager
 from src.file_uploader import FileUploader
+from src.cloudinary import Uploader
 import src.strings as Strings
+
 
 # Configuration
 
@@ -42,6 +52,7 @@ deckImages = DeckAsImageGenerator(cardCollection)
 
 credentials = CredentialsManager(CREDENTIALS_FILE)
 serverConfig = ServerConfig(ENABLED_SERVERS)
+uploader = Uploader(credentials.getCloudinaryCloudName(), credentials.getCloudinaryApiKey(), credentials.getCloudinaryApiSecret())
 
 banlistValidator = BanlistValidator()
 
@@ -1043,9 +1054,18 @@ async def get_img_deck(interaction: discord.Interaction, player_name: str):
 			deck = deckFile.read()
 			ydk = Ydk(deck)
 
-			image = deckImages.buildImageFromDeck(ydk.getDeck(), player_name)
+			image = deckImages.buildImageFromDeck(ydk.getDeck(), player_name, player_name)
+			imageUrl = uploader.upload_image(image)
+   
+			embed = Embed(title=player_name)
+			embed.set_image(url="attachment://deck.jpg")
+			embed.add_field(name="", value=f"[See high resolution decklist](%s)" % imageUrl)
 
-			await interaction.followup.send(file=File(filename="deck.png", fp=image))
+			with open(image, "rb") as fp:
+				image_file = File(fp, filename="deck.jpg")
+    
+			await interaction.followup.send(embed=embed, file=image_file)
+
 			os.remove(image)
 	else:
 		await interaction.response.send_message(result.getMessage())
@@ -1087,8 +1107,8 @@ async def download_zip(interaction: discord.Interaction):
 		
 		decks = deckCollectionManager.getAllDecks()
 		deckZip = deckImages.zipDecks(decks)
-		uploader = FileUploader()
-		fileUrl = uploader.uploadFile(deckZip)
+		fileUploader = FileUploader()
+		fileUrl = fileUploader.uploadFile(deckZip)
   
 		if fileUrl != None:
 			await interaction.followup.send(fileUrl)
@@ -1130,9 +1150,18 @@ async def confirm_deck(interaction: discord.Interaction):
 			deck = deckFile.read()
 			ydk = Ydk(deck)
 
-			image = deckImages.buildImageFromDeck(ydk.getDeck(), player_name)
+			image = deckImages.buildImageFromDeck(ydk.getDeck(), player_name, player_name)
+			imageUrl = uploader.upload_image(image)
+   
+			embed = Embed(title=player_name)
+			embed.set_image(url="attachment://deck.jpg")
+			embed.add_field(name="", value=f"[See high resolution decklist](%s)" % imageUrl)
 
-			await interaction.followup.send(file=File(filename="deck.png", fp=image))
+			with open(image, "rb") as fp:
+				image_file = File(fp, filename="deck.jpg")
+    
+			await interaction.followup.send(embed=embed, file=image_file)
+
 			os.remove(image)
 	else:
 		await interaction.response.send_message(result.getMessage())
@@ -1533,8 +1562,8 @@ async def share_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
 			ydkAsString = await ydk.read()
 			ydkAsString = ydkAsString.decode("utf-8")
 			ydkNative = Ydk(ydkAsString)
-
-			image = deckImages.buildImageFromDeck(ydkNative.getDeck(), "temp")
+			filename = ydk.filename.replace("_", " ")[:-4]
+			image = deckImages.buildImageFromDeck(ydkNative.getDeck(), "temp", filename)
 			with open("img/decks/temp.ydk", 'w') as file:
 				deckAsLines = ydkAsString.split("\n")
 				for line in deckAsLines:
@@ -1543,14 +1572,14 @@ async def share_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
 						file.write(line)
 						file.write("\n")
 
-			filename = ydk.filename.replace("_", " ")[:-4]
-
+			imageUrl = uploader.upload_image(image)
 			embed = Embed(title=filename)
-			embed.set_image(url="attachment://deck.png")
+			embed.set_image(url="attachment://deck.jpg")
+			embed.add_field(name="", value=f"[See high resolution decklist](%s)" % imageUrl)
 
 			with open(image, "rb") as fp:
-				image_file = File(fp, filename="deck.png")
-
+				image_file = File(fp, filename="deck.jpg")
+    
 			await interaction.followup.send(embed=embed, file=image_file)
 
 		else:
@@ -1579,14 +1608,17 @@ async def share_ydk(interaction: discord.Interaction, db_url:str):
 		deck = manager.getYDKFromDuelingbookURL(playerName, db_url)
 		deckName = manager.getDeckNameFromDuelingbookURL(db_url)
 		ydk = Ydk(deck)
-		image = deckImages.buildImageFromDeck(ydk.getDeck(), "temp")
+		image = deckImages.buildImageFromDeck(ydk.getDeck(), "temp", deckName)
+		imageUrl = uploader.upload_image(image)
+
 
 		embed = Embed(title=deckName)
-		embed.set_image(url="attachment://deck.png")
-		embed.add_field(name="", value=f"[See deck in Duelingbook](%s)" % db_url)
+		embed.set_image(url="attachment://deck.jpg")
+		embed.add_field(name="", value=f"[See high resolution decklist](%s)" % imageUrl, inline=False)
+		embed.add_field(name="", value=f"[See deck in Duelingbook](%s)" % db_url, inline=False)
 
 		with open(image, "rb") as fp:
-			image_file = File(fp, filename="deck.png")
+			image_file = File(fp, filename="deck.jpg")
 
 		await interaction.followup.send(embed=embed, file=image_file)
 

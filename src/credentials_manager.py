@@ -6,6 +6,10 @@ ADVANCED_BANLIST_KEY = 'advanced_banlist'
 CHALLONGE_API_KEY = 'challonge_key'
 CHALLONGE_USERNAME_KEY = 'challonge_username'
 GOOGLE_DRIVE_FOLDER = 'google_drive_folder'
+CLOUDINARY_CLOUD_NAME = 'cloudinary_cloud_name'
+CLOUDINARY_API_KEY = 'cloudinary_api_key'
+CLOUDINARY_API_SECRET = 'cloudinary_api_secret'
+
 
 header = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
 			  'AppleWebKit/537.11 (KHTML, like Gecko) '
@@ -41,3 +45,12 @@ class CredentialsManager:
 
 	def getGoogleDriveFolder(self):
 		return self.credentials.get(GOOGLE_DRIVE_FOLDER)
+
+	def getCloudinaryCloudName(self):
+		return self.credentials.get(CLOUDINARY_CLOUD_NAME)
+
+	def getCloudinaryApiKey(self):
+		return self.credentials.get(CLOUDINARY_API_KEY)
+
+	def getCloudinaryApiSecret(self):
+		return self.credentials.get(CLOUDINARY_API_SECRET)

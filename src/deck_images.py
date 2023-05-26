@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from src.deck_validation import Deck as ValidationDeck
 from src.deck_collection import Deck as CollectionDeck
 from src.card_collection import CardCollection
@@ -6,12 +6,23 @@ from typing import List
 import shutil
 import os
 
-mainDeckMargin = 6
 
-cardWidth = 200
-cardHeight = 292
+R, G, B = 0, 0, 0
+backgroundColor = (R,G,B)
+
+headerMargin = 438
+lateralMargin = 60
+bottomMargin = 20
+rectangleMargin = 8
+mainDeckMargin = 8
+sectionMargin = 146
+
+cardWidth = 421
+cardHeight = 614
 
 DECKS_FOLDER_NAME = "./img/decks"
+
+FONT_FILE = "font/Roboto-Medium.ttf"
 
 class DeckAsImageGenerator:
 
@@ -29,126 +40,157 @@ class DeckAsImageGenerator:
 					os.remove(entry.path)
 		
 		for deck in decks:
-			files.append(self.buildImageFromDeck(deck.toReadableDeck(), deck.playerName))
+			files.append(self.buildImageFromDeck(deck.toReadableDeck(), deck.playerName, deck.playerName))
 
 		shutil.make_archive("./img/zip/decks", 'zip', DECKS_FOLDER_NAME)
 		return "./img/zip/decks.zip"
 
-	def buildImageFromDeck(self, deck:ValidationDeck, filename:str):
-		mainDeckImages : List[str]= []
-		extraDeckImages : List[str] = []
-		sideDeckImages : List[str] = []
-		
-		#Populate the card image url arrays
+	def buildImageFromDeck(self, deck: ValidationDeck, filename: str, deckname:str):
+		mainDeckImages = [self.cardCollection.getCardImageFromId(card.cardId) for card in deck.getMainDeck() for _ in range(card.copies)]
+		extraDeckImages = [self.cardCollection.getCardImageFromId(card.cardId) for card in deck.getExtraDeck() for _ in range(card.copies)]
+		sideDeckImages = [self.cardCollection.getCardImageFromId(card.cardId) for card in deck.getSideDeck() for _ in range(card.copies)]
 
-		for card in deck.getMainDeck():
-			for i in range(0,card.copies):
-				imageUrl = self.cardCollection.getCardImageFromId(card.cardId)
-				mainDeckImages.append(imageUrl)
-		for card in deck.getExtraDeck():
-			for i in range(0, card.copies):
-				imageUrl = self.cardCollection.getCardImageFromId(card.cardId)
-				extraDeckImages.append(imageUrl)
-		for card in deck.getSideDeck():
-			for i in range(0, card.copies):
-				imageUrl = self.cardCollection.getCardImageFromId(card.cardId)
-				sideDeckImages.append(imageUrl)
-
-		
-		# This is the width *without* the outer margins
-		rowWidth = 10*cardWidth + 9*mainDeckMargin
-
+		mainDeckCount = len(mainDeckImages)
 		extraDeckCount = len(extraDeckImages)
-		extraDeckWidth = extraDeckCount * cardWidth
-		extraDeckMarginCount = extraDeckCount - 1
-
-		# This is the margin for the extra deck. For values larger than 10, it will likely be negative (so cards will pile on top of each other to fit)
-		extraDeckMargin = int((rowWidth - extraDeckWidth)/extraDeckMarginCount) - 1
-
 		sideDeckCount = len(sideDeckImages)
-		sideDeckWidth = sideDeckCount * cardWidth
-		sideDeckMarginCount = sideDeckCount - 1
 
-		# This is the margin for the side deck. For values larger than 10, it will likely be negative (so cards will pile on top of each other to fit)
-		sideDeckMargin = int((rowWidth - sideDeckWidth)/sideDeckMarginCount) - 1
+		mainDeckWidth = 10 * cardWidth + 9 * mainDeckMargin
 
-		# This is the width for the image, including the margins
-		width = 10*cardWidth + 11*mainDeckMargin
+		mainDeckRows = (len(mainDeckImages) + 9) // 10
+		hasExtraDeck = extraDeckCount > 0
+		hasSideDeck = sideDeckCount > 0
 
-		mainDeckRows = int(len(mainDeckImages) / 10)
-		if len(mainDeckImages) > mainDeckRows*10:
-			mainDeckRows +=1
-		hasExtraDeck = len(extraDeckImages) != 0
-		hasSideDeck = len(sideDeckImages) != 0
+		# Calculate the overall image dimensions
+		height = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + bottomMargin + 2*rectangleMargin + 4
 
-		# This part calculates the height of the image. The width is always gonna be constant, but the height depends on how many cards are in the main deck
-		height = mainDeckRows * cardHeight + (mainDeckRows + 1) * mainDeckMargin
-		extraDeckStart = height
 		if hasExtraDeck:
-			height += cardHeight + mainDeckMargin
-		sideDeckStart = height
-		if hasSideDeck:
-			height += cardHeight + mainDeckMargin
-		
-		
-		deckImage = Image.new("RGB", (width, height))
-		lastImage = None
-		lastUrl = None
+			height += cardHeight + sectionMargin + 2*rectangleMargin + 4
 
-		for i in range(0, mainDeckRows):
-			for j in range (0, 10):
-				# i is the row number, j is the column number
-				index = i*10 + j
-				if len(mainDeckImages) > index:
-					imageUrl = mainDeckImages[index]
-					if (imageUrl == lastUrl):
-						img = lastImage
-					else:
-						img = Image.open(imageUrl)
-					lastUrl = imageUrl
-					if lastImage != img:
-						img = img.resize((cardWidth, cardHeight))
-					lastImage = img
-					x = j * cardWidth + (j+1) * mainDeckMargin
-					y = i * cardHeight + (i+1) * mainDeckMargin
-					deckImage.paste(img, (x,y))
-		
-		if hasExtraDeck:
-			column = 0
-			# Extra Deck is displayed in just 1 row, so we just need column number
-			for imageUrl in extraDeckImages:
-				if (imageUrl == lastUrl):
-					img = lastImage
-				else:
-					img = Image.open(imageUrl)
-				lastUrl = imageUrl
-				if lastImage != img:
-					img = img.resize((cardWidth, cardHeight))
-				lastImage = img
-				x = column * (cardWidth + extraDeckMargin) + mainDeckMargin
-				y = extraDeckStart
-				deckImage.paste(img, (x,y))
-				column+=1
-		
 		if hasSideDeck:
-			column = 0
-			# Same for the Side Deck.
-			for imageUrl in sideDeckImages:
-				if (imageUrl == lastUrl):
-					img = lastImage
-				else:
-					img = Image.open(imageUrl)
-				lastUrl = imageUrl
-				if lastImage != img:
-					img = img.resize((cardWidth, cardHeight))
-				lastImage = img
-				x = column * (cardWidth + sideDeckMargin) + mainDeckMargin
-				y = sideDeckStart
-				deckImage.paste(img, (x,y))
-				column+=1
+			height += cardHeight + sectionMargin + 2*rectangleMargin + 4
+
+		width = 2 * lateralMargin + mainDeckWidth
+
+		deckImage = Image.new("RGB", (width, height), backgroundColor)
+		draw = ImageDraw.Draw(deckImage)
+
+		# Draw white rectangular boxes for the main, extra, and side deck areas
+		mainDeckRect = (
+			lateralMargin - rectangleMargin,
+			headerMargin - rectangleMargin,
+			lateralMargin + mainDeckWidth + rectangleMargin,
+			headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + rectangleMargin
+		)
+		draw.rectangle(mainDeckRect, outline=(255, 255, 255), width=3)
+
+		if hasExtraDeck:
+			extraDeckRect = (
+				lateralMargin - rectangleMargin,
+				headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin - rectangleMargin,
+				lateralMargin + mainDeckWidth + rectangleMargin,
+				headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin + cardHeight + rectangleMargin
+			)
+			draw.rectangle(extraDeckRect, outline=(255, 255, 255), width=3)
+
+		if hasSideDeck:
+			sideDeckRect = (
+				lateralMargin - rectangleMargin,
+				headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin + cardHeight + sectionMargin - rectangleMargin,
+				lateralMargin + mainDeckWidth + rectangleMargin,
+				headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin + cardHeight + sectionMargin + cardHeight + rectangleMargin
+			)
+			draw.rectangle(sideDeckRect, outline=(255, 255, 255), width=3)
+
+		# Draw main deck cards
+		for i, imageUrl in enumerate(mainDeckImages):
+			img = Image.open(imageUrl)
+			x = lateralMargin + (i % 10) * (cardWidth + mainDeckMargin)
+			y = headerMargin + (i // 10) * (cardHeight + mainDeckMargin)
+			deckImage.paste(img, (x, y))
+
+		extraDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - extraDeckCount * cardWidth) / (extraDeckCount - 1)
+
+		# Draw extra deck cards
+		for i, imageUrl in enumerate(extraDeckImages):
+			img = Image.open(imageUrl)
+			x = lateralMargin + i * cardWidth + i * extraDeckMargin
+			y = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin
+			deckImage.paste(img, (round(x), y))
+   
 		
+		sideDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - sideDeckCount * cardWidth) / (sideDeckCount - 1)
+
+		# Draw side deck cards
+		for i, imageUrl in enumerate(sideDeckImages):
+			img = Image.open(imageUrl)
+			x = lateralMargin + i * cardWidth + i * sideDeckMargin
+			y = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin + cardHeight + sectionMargin
+			deckImage.paste(img, (round(x), y))
+   
+		# Draw count rectangles
+  
+		# Draw white rectangle on top of the main deck
+		mainDeckHeaderRect = (
+			mainDeckRect[0],
+			mainDeckRect[1] - 108,
+			mainDeckRect[2],
+			mainDeckRect[1] -8
+		)
+		draw.rectangle(mainDeckHeaderRect, outline=(255, 255, 255), fill=(32, 32, 32), width=3)
+
+		# Add text to the main deck header rectangle
+		mainDeckHeaderText = "Main deck: %d" % mainDeckCount
+		textFont = ImageFont.truetype(FONT_FILE, 44)
+		textWidth, textHeight = draw.textsize(mainDeckHeaderText, font=textFont)
+		textX = mainDeckHeaderRect[0] + 30
+		textY = mainDeckHeaderRect[1] + (mainDeckHeaderRect[3] - mainDeckHeaderRect[1] - textHeight) // 2
+		draw.text((textX, textY), mainDeckHeaderText, font=textFont, fill=(255, 255, 255))
+
+		# Draw white rectangle above the extra deck
+		if hasExtraDeck:
+			extraDeckHeaderRect = (
+				extraDeckRect[0],
+				extraDeckRect[1] - 100 - 8,
+				extraDeckRect[2],
+				extraDeckRect[1] - 8
+			)
+			draw.rectangle(extraDeckHeaderRect, outline=(255, 255, 255),fill=(32, 32, 32), width=3)
+
+			# Add text to the extra deck header rectangle
+			extraDeckHeaderText = "Extra deck: %d" % extraDeckCount
+			textWidth, textHeight = draw.textsize(extraDeckHeaderText, font=textFont)
+			textX = extraDeckHeaderRect[0] + 30
+			textY = extraDeckHeaderRect[1] + (extraDeckHeaderRect[3] - extraDeckHeaderRect[1] - textHeight) // 2
+			draw.text((textX, textY), extraDeckHeaderText, font=textFont, fill=(255, 255, 255))
+
+		# Draw white rectangle above the side deck
+		if hasSideDeck:
+			sideDeckHeaderRect = (
+				sideDeckRect[0],
+				sideDeckRect[1] - 100 - 8,
+				sideDeckRect[2],
+				sideDeckRect[1] - 8
+			)
+			draw.rectangle(sideDeckHeaderRect, outline=(255, 255, 255), fill=(32, 32, 32),width=3)
+
+			# Add text to the side deck header rectangle
+			sideDeckHeaderText = "Side deck: %d" % sideDeckCount
+			textWidth, textHeight = draw.textsize(sideDeckHeaderText, font=textFont)
+			textX = sideDeckHeaderRect[0] + 30
+			textY = sideDeckHeaderRect[1] + (sideDeckHeaderRect[3] - sideDeckHeaderRect[1] - textHeight) // 2
+			draw.text((textX, textY), sideDeckHeaderText, font=textFont, fill=(255, 255, 255))
+
+
+		# Add text to the header
+		headerText = deckname
+		headerFont = ImageFont.truetype(FONT_FILE, 86)
+		headerTextWidth, headerTextHeight = draw.textsize(headerText, font=headerFont)
+		headerTextX = (width - headerTextWidth) // 2
+		headerTextY = (headerMargin - 100 - headerTextHeight) // 2
+
+		draw.text((headerTextX, headerTextY), headerText, font=headerFont, fill=(255, 255, 255))
 
 		filename = "./img/decks/%s.jpg" % filename
- 
 		deckImage.save(filename)
 		return filename
+
