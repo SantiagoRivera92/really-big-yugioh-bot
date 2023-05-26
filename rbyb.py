@@ -8,6 +8,7 @@ sys.dont_write_bytecode = True
 
 import discord
 import os
+import asyncio
 
 from typing import List
 
@@ -184,10 +185,26 @@ class FormatForPartialCardnameCallback:
 
 # Events and commands
 
+decay = False
 
 @bot.event
 async def on_ready():
-	pass
+    print('Bot is ready')
+    bot.loop.create_task(decay_scores())
+    
+async def decay_scores():
+	if decay:
+		servers: List[int] = serverConfig.getEnabledServers()
+		for serverId in servers:
+			# Get list of formats for that server
+			formats = config.getSupportedFormats(serverId)
+			for format in formats:
+				matchmaking = MatchmakingManager(format, serverId)
+				matchmaking.decay()
+	else:
+		decay = True
+            
+	await asyncio.sleep(86400)
 
 
 def canCommandExecute(interaction: discord.Interaction, adminOnly):
@@ -215,7 +232,6 @@ def canCommandExecute(interaction: discord.Interaction, adminOnly):
 @bot.tree.command(name=Strings.COMMAND_NAME_CARD, description="Displays card text for any given card name")
 async def card(interaction: discord.Interaction, cardname: str):
 
-	"""Displays card text for any given card name"""
 	serverId = interaction.guild_id
 
 	result = canCommandExecute(interaction, False)
@@ -298,8 +314,6 @@ async def card(interaction: discord.Interaction, cardname: str):
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_ADD_ADVANCED, description="Adds Advanced as a format or updates the banlist")
 async def add_advanced(interaction: discord.Interaction):
 
-	"""Adds Advanced as a format or updates the banlist"""
-
 	serverId = interaction.guild_id
 
 	result = canCommandExecute(interaction, True)
@@ -331,8 +345,6 @@ async def add_advanced(interaction: discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_ADD, description="Adds a format to the bot.")
 async def add_format(interaction: discord.Interaction, format_name: str, lflist: discord.Attachment):
 
-	"""Adds a format to the bot"""
-
 	serverId = interaction.guild_id
 
 	result = canCommandExecute(interaction, True)
@@ -363,8 +375,6 @@ async def add_format(interaction: discord.Interaction, format_name: str, lflist:
 
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_ADD_TIME_WIZARD, description="Adds a Time Wizard format to the bot. Date must be in YYYY-MM-DD format.")
 async def add_timewizard(interaction: discord.Interaction, format_date: str, format_name: str):
-
-	"""Adds a Time Wizard format to the bot. Date must be in YYYY-MM-DD format."""
 
 	serverId = interaction.guild_id
 
@@ -407,8 +417,6 @@ async def add_timewizard(interaction: discord.Interaction, format_date: str, for
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_TIE, description="Sets the default format for this channel.")
 async def tie_format_to_channel(interaction: discord.Interaction, format_name: str):
 
-	"""Sets the default format for this channel"""
-
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, True)
 	if not result.wasSuccessful():
@@ -442,8 +450,6 @@ async def set_default_league_channel(interaction:discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_DEFAULT, description="Sets the default format for the entire server.")
 async def set_default_format(interaction: discord.Interaction, format_name: str):
 
-	"""Sets the default format for the entire server."""
-
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, True)
 
@@ -462,8 +468,6 @@ async def set_default_format(interaction: discord.Interaction, format_name: str)
 
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_CHECK_TIED, description="Checks if this channel has a format tied to it")
 async def check_tied_format(interaction: discord.Interaction):
-
-	"""Checks if this channel has a format tied to it"""
 
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, False)
@@ -487,7 +491,6 @@ async def check_tied_format(interaction: discord.Interaction):
 
 @bot.tree.command(name=Strings.COMMAND_NAME_DECK_VALIDATE, description="Validates a deck")
 async def validate_deck(interaction: discord.Interaction, ydk: discord.Attachment):
-	"""Validates a deck"""
 
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, False)
@@ -526,8 +529,6 @@ async def validate_deck(interaction: discord.Interaction, ydk: discord.Attachmen
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_BANLIST, description="Get an EDOPRO banlist")
 async def get_banlist(interaction: discord.Interaction):
 
-	"""Get an EDOPRO banlist"""
-
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, False)
 	if result.wasSuccessful():
@@ -555,8 +556,6 @@ async def get_banlist(interaction: discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_LIST, description="Get a list of all supported formats in this server.")
 async def format_list(interaction: discord.Interaction):
 
-	"""Get a list of all supported formats in this server."""
-
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, False)
 	if result.wasSuccessful():
@@ -575,8 +574,6 @@ async def format_list(interaction: discord.Interaction):
 
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_REGISTER, description="Register a player for a league.")
 async def register_for_league(interaction: discord.Interaction):
-
-	"""Register a player for a league. If already registered, updates your name in the leaderboard for this format."""
 
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
@@ -600,8 +597,6 @@ async def register_for_league(interaction: discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_RATING, description="Checks your score in the leaderboard for the format tied to this channel.")
 async def check_rating(interaction: discord.Interaction):
 
-	"""Checks your score in the leaderboard for the format tied to this channel"""
-
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
 	channelName = getChannelName(interaction.channel)
@@ -624,8 +619,6 @@ async def check_rating(interaction: discord.Interaction):
 
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_ACTIVE_MATCHES, description="Returns the full list of active matches.")
 async def list_active_matches(interaction: discord.Interaction):
-
-	"""Returns the full list of active matches"""
 
 	serverId = interaction.guild_id
 	channelName = getChannelName(interaction.channel)
@@ -656,8 +649,6 @@ async def list_active_matches(interaction: discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_GET_MATCH, description="Returns your active ranked match for this league if you have one.")
 async def get_active_match(interaction: discord.Interaction):
 
-	"""Returns your active ranked match for this league if you have one."""
-
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
 	channelName = getChannelName(interaction.channel)
@@ -685,8 +676,6 @@ async def get_active_match(interaction: discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_LEADERBOARD, description="Returns the leaderboard for this league.")
 async def print_leaderboard(interaction: discord.Interaction):
 
-	"""Returns the leaderboard for this league."""
-
 	serverId = interaction.guild_id
 	channelName = getChannelName(interaction.channel)
 	result = canCommandExecute(interaction, False)
@@ -713,8 +702,6 @@ async def print_leaderboard(interaction: discord.Interaction):
 
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_JOIN, description="Joins the ranked queue. If another player joins it in 10 minutes, a ranked match starts.")
 async def join_queue(interaction: discord.Interaction):
-
-	"""Joins the ranked queue. If another player joins it in 10 minutes, a ranked match starts."""
 
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
@@ -749,8 +736,6 @@ async def join_queue(interaction: discord.Interaction):
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_CANCEL, description="Cancels an active match. Use only if your opponent is unresponsive.")
 async def cancel_match(interaction: discord.Interaction):
 
-	"""Cancels an active match. Use only if your opponent is unresponsive."""
-
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
 	channelName = getChannelName(interaction.channel)
@@ -777,8 +762,6 @@ async def cancel_match(interaction: discord.Interaction):
 
 @bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_LOST, description="Notifies you lost your ranked match.")
 async def notify_ranked_win(interaction: discord.Interaction):
-
-	"""Notifies you lost your ranked match."""
 
 	serverId = interaction.guild_id
 	playerId = interaction.user.id
@@ -933,7 +916,6 @@ async def get_readable_decklist(interaction: discord.Interaction, player_name: s
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE, description="Removes every player that is present in challonge but not locally")
 async def cleanup_challonge(interaction:discord.Interaction):
-	"""Removes every player that is present in challonge but not locally"""
 
 	serverId = interaction.guild_id
 	result = canCommandExecute(interaction, True)
@@ -968,30 +950,6 @@ async def cleanup_challonge(interaction:discord.Interaction):
 		await interaction.followup.send(message)
 	else:
 		await interaction.followup.send("No players were unsynced")
-
-
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEAR_DECKS, description="Clears every decklist from the active tournament.")
-async def list_unsubmitted_players(interaction: discord.Interaction):
-
-	"""Lists all players that have registered to a tournament and haven't submitted a decklist."""
-
-	serverId = interaction.guild_id
-	channelName = getChannelName(interaction.channel)
-	result = canCommandExecute(interaction, False)
-	if not result.wasSuccessful():
-		await interaction.response.send_message(result.getMessage(), ephemeral=True)
-		return
-
-	await interaction.response.defer(ephemeral=True)
-	forcedFormat = config.getForcedFormat(channelName, serverId)
-	deckCollectionManager = DeckCollectionManager(forcedFormat, serverId)
-	deckCollectionManager.cleardecks()
-	manager = getTournamentManager(interaction)
-	manager.cleardecks()
-
-	await interaction.followup.send("All decks have been deleted.")
-
-
 
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_YDK_DECK, description="Gets a decklist as a YDK file")
@@ -1063,7 +1021,7 @@ async def get_img_deck(interaction: discord.Interaction, player_name: str):
 
 			with open(image, "rb") as fp:
 				image_file = File(fp, filename="deck.jpg")
-    
+		
 			await interaction.followup.send(embed=embed, file=image_file)
 
 			os.remove(image)
@@ -1143,7 +1101,7 @@ async def confirm_deck(interaction: discord.Interaction):
 				player_name = player
 				break
 		if not found:
-			await interaction.followup.send("You haven't submitted a decklist")
+			await interaction.followup.send("You haven't submitted a decklist. Do so by using /t_join_db or /t_join_ydk. If you have already joined, please ping Diamond Dude for troubleshooting.")
 			return
 		filename = deckCollectionManager.getDecklistForPlayer(player_name)
 		with open(filename) as deckFile:
@@ -1159,7 +1117,7 @@ async def confirm_deck(interaction: discord.Interaction):
 
 			with open(image, "rb") as fp:
 				image_file = File(fp, filename="deck.jpg")
-    
+		
 			await interaction.followup.send(embed=embed, file=image_file)
 
 			os.remove(image)
@@ -1253,7 +1211,7 @@ def getTournamentManager(interaction: discord.Interaction):
 	return TournamentManager(credentials, serverId)
 
 
-@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CREATE, description="Creates a new tournament. This deletes any previous tournaments!")
+@bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CREATE, description="Creates a new tournament. This deletes any previous tournaments and decklists!")
 async def create_tournament(interaction: discord.Interaction, tournament_name: str, format_name: str, tournament_type: str):
 
 	serverId = interaction.guild_id
@@ -1280,7 +1238,11 @@ async def create_tournament(interaction: discord.Interaction, tournament_name: s
 		return
 
 	await interaction.response.defer(ephemeral=True)
-	DeckCollectionManager(format_name, serverId).beginCollection()
+
+	deckCollectionManager = DeckCollectionManager(format_name, serverId)
+ 
+	deckCollectionManager.beginCollection()
+	
 	manager = getTournamentManager(interaction)
 	result = manager.createTournament(
 		tournament_name, format_name, tournament_type)
@@ -1327,6 +1289,35 @@ async def tournament_info(interaction: discord.Interaction):
 	manager = getTournamentManager(interaction)
 
 	await interaction.followup.send(manager.getTournamentInfo().getMessage())
+ 
+ 
+def register_list(interaction: discord.Interaction, format: str, decklist:str):
+	serverId = interaction.guild_id
+	playerName = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
+	playerId = interaction.user.id
+	banlistFile = config.getBanlistForFormat(format, serverId)
+	path = None
+	if config.isFormatSupported(format, serverId):
+		result = deckValidator.validateDeck(decklist, banlistFile)
+		if result.wasSuccessful():
+			deckCollectionManager = DeckCollectionManager(format, serverId)
+			result = deckCollectionManager.addDeck(playerName, decklist)
+			if result.wasSuccessful():
+				path = deckCollectionManager.getDecklistForPlayer(playerName)
+		else:
+			print("%s's deck did not validate" % playerName)
+			print("Reason: %s" % result.getMessage())
+			return result
+
+	# At this point, decklist is updated.
+ 
+	if path != None:
+		return getTournamentManager(interaction).registerToTournament(playerName, playerId, path)
+	else:
+		print("%s's decklist path is None." % playerName)
+		return OperationResult(False, "Something went wrong while registering your list. Please contact Diamond Dude or try again.")
+	
+		
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN_YDK, description="Registers to an open tournament using a .ydk, or updates your deck if already registered")
 async def register_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
@@ -1346,42 +1337,17 @@ async def register_ydk(interaction: discord.Interaction, ydk: discord.Attachment
 	if ydk.filename.endswith(".ydk"):
 		channelName = getChannelName(interaction.channel)
 		forcedFormat = config.getForcedFormat(channelName, serverId)
-		banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
 		if config.isFormatSupported(forcedFormat, serverId):
 			ydkFile = await ydk.read()
 			ydkFile = ydkFile.decode("utf-8")
-			result = deckValidator.validateDeck(ydkFile, banlistFile)
-			if result.wasSuccessful():
-				deckCollectionManager = DeckCollectionManager(
-					forcedFormat, serverId)
-				playerName = "%s#%s" % (
-					interaction.user.name, interaction.user.discriminator)
-				result = deckCollectionManager.addDeck(playerName, ydkFile)
-				if result.wasSuccessful():
-					path = deckCollectionManager.getDecklistForPlayer(
-						playerName)
-					result = manager.setDeckForPlayer(playerName, path)
-			else:
-				await interaction.followup.send(result.getMessage())
-				return
+			await interaction.followup.send(register_list(interaction, forcedFormat, ydkFile).getMessage())
 	else:
 		await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
-		return
-
-	manager = getTournamentManager(interaction)
-
-	player_name = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
-	player_id = interaction.user.id
  
-	if not player_name in manager.getChallongePlayers():
-		result = manager.registerToTournament(player_name, player_id)
-
-	await interaction.followup.send(result.getMessage())
 
 @bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN_DB, description="Registers to a tournament using a db url, or updates your deck if already registered.")
 async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
 	result = canCommandExecute(interaction, False)
-	serverId = interaction.guild_id
 	if not result.wasSuccessful():
 		await interaction.response.send_message(result.getMessage(), ephemeral=True)
 		return
@@ -1393,57 +1359,18 @@ async def register_ydk(interaction: discord.Interaction, duelingbook_link: str):
 		await interaction.followup.send("There is no ongoing tournament in this server")
 		return
 
-	serverId = interaction.guild_id
-	result = canCommandExecute(interaction, False)
-	if not result.wasSuccessful():
-		await interaction.response.send_message(result.getMessage())
-		return
-
-	supportedFormats = config.getSupportedFormats(serverId)
-	if len(supportedFormats) == 0:
-		await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
-		return
-
 	manager = DuelingbookManager()
-	playerName = "%s#%s" % (interaction.user.name,
-							interaction.user.discriminator)
+	playerName = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
 	result = manager.isValidDuelingbookUrl(duelingbook_link)
 	if not result.wasSuccessful():
 		await interaction.followup.send(result.getMessage())
 		return
 
 	deck = manager.getYDKFromDuelingbookURL(playerName, duelingbook_link)
-	channelName = getChannelName(interaction.channel)
-	forcedFormat = config.getForcedFormat(channelName, serverId)
-	if forcedFormat == None:
-		await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
-	else:
-		banlistFile = config.getBanlistForFormat(forcedFormat, serverId)
-		if config.isFormatSupported(forcedFormat, serverId):
-			result = deckValidator.validateDeck(deck, banlistFile)
-			if result.wasSuccessful():
-				deckCollectionManager = DeckCollectionManager(
-					forcedFormat, serverId)
-				playerName = "%s#%s" % (
-					interaction.user.name, interaction.user.discriminator)
-				result = deckCollectionManager.addDeck(playerName, deck)
-				if result.wasSuccessful():
-					manager = getTournamentManager(interaction)
-					path = deckCollectionManager.getDecklistForPlayer(
-						playerName)
-					result = manager.setDeckForPlayer(playerName, path)
-			else:
-				await interaction.followup.send(result.getMessage())
-				return
-
-	manager = getTournamentManager(interaction)
-
-	player_id = interaction.user.id
-
-	if not playerName in manager.getChallongePlayers():
-		result = manager.registerToTournament(playerName, player_id)
-
-	await interaction.followup.send(result.getMessage())
+	
+	await interaction.followup.send(register_list(interaction, forcedFormat, deck).getMessage())
+ 
+ 
 
 @bot.tree.command(name=Strings.COMMAND_NAME_SET_DB_NAME, description="Sets your Duelingbook name for a tournament")
 async def set_db_name(interaction:discord.Interaction, db_name:str):
@@ -1490,7 +1417,28 @@ async def report_tournament_loss(interaction: discord.Interaction):
 	player_name = "%s#%s" % (interaction.user.name,
 							 interaction.user.discriminator)
 	manager = TournamentManager(credentials, serverId)
+
 	result = manager.reportLoss(player_name)
+
+	channelName = getChannelName(interaction.channel)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+ 
+	matchmakingManager = MatchmakingManager(forcedFormat, serverId)
+ 
+	t_winner = manager.getWinnerFromLoser(player_name)
+ 
+	winner = matchmakingManager.getPlayerForId(t_winner.discordId)
+	loser = matchmakingManager.getPlayerForId(interaction.user.id)
+ 
+	if winner == None:
+		matchmakingManager.registerPlayer(t_winner.discordId, t_winner.username)
+ 
+	if loser == None:
+		matchmakingManager.registerPlayer(interaction.user.id, player_name)
+  
+	matchmakingManager.createMatch(t_winner.discordId, interaction.user.id, True)
+	matchmakingManager.endMatch(t_winner.discordId)
+ 
 	await interaction.followup.send(result.getMessage())
 
 
@@ -1505,6 +1453,26 @@ async def force_tournament_loss(interaction: discord.Interaction, player_name: s
 	serverId = interaction.guild_id
 	manager = TournamentManager(credentials, serverId)
 	result = manager.reportLoss(player_name)
+
+	channelName = getChannelName(interaction.channel)
+	forcedFormat = config.getForcedFormat(channelName, serverId)
+ 
+	matchmakingManager = MatchmakingManager(forcedFormat, serverId)
+ 
+	t_winner = manager.getWinnerFromLoser(player_name)
+ 
+	winner = matchmakingManager.getPlayerForId(t_winner.discordId)
+	loser = matchmakingManager.getPlayerForId(interaction.user.id)
+ 
+	if winner == None:
+		matchmakingManager.registerPlayer(t_winner.discordId, t_winner.username)
+ 
+	if loser == None:
+		matchmakingManager.registerPlayer(interaction.user.id, player_name)
+  
+	matchmakingManager.createMatch(t_winner.discordId, interaction.user.id, True)
+	matchmakingManager.endMatch(t_winner.discordId)
+ 
 	await interaction.followup.send(result.getMessage())
 
 
@@ -1579,7 +1547,7 @@ async def share_ydk(interaction: discord.Interaction, ydk: discord.Attachment):
 
 			with open(image, "rb") as fp:
 				image_file = File(fp, filename="deck.jpg")
-    
+		
 			await interaction.followup.send(embed=embed, file=image_file)
 
 		else:

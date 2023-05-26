@@ -18,16 +18,20 @@ ACTIVE_MATCHES_KEY = "active_matches"
 PLAYER_ID_KEY = "player_id"
 PLAYER_NAME_KEY = "player_name"
 PLAYER_SCORE_KEY = "score"
+PLAYER_WINS_KEY = "wins"
+PLAYER_LOSSES_KEY = "losses"
 QUEUE_KEY = "queue"
 PLAYER_IN_QUEUE_KEY = "player"
 TIMESTAMP_IN_QUEUE_KEY = "timestamp"
 
 class Player:
     
-    def __init__(self, playerId:int, playerName:str, score:float):
+    def __init__(self, playerId:int, playerName:str, score:float, wins:int, losses:int):
         self.playerId = playerId
         self.playerName = playerName
         self.score = score
+        self.wins = wins
+        self.losses = losses
 
     def getPlayerId(self):
         return self.playerId
@@ -37,18 +41,43 @@ class Player:
 
     def getPlayerScore(self):
         return self.score
+    
+    def getWins(self):
+        return self.wins
+    
+    def getLosses(self):
+        return self.losses
+    
+    def getWinrate(self):
+        return "%f%" % ((100 * self.wins) / (self.wins + self.losses))
+    
+    def reportWin(self):
+        self.wins = self.wins + 1
+        
+    def reportLoss(self):
+        self.losses = self.losses + 1
 
     def setPlayerName(self, name:str):
         self.playerName = name
     
     def setScore(self, score:float):
         self.score = score
+        
+    def decayScore(self):
+        if self.score > 800:
+            self.score = self.score * 0.99
+        elif self.score > 550:
+            self.score = self.score * 0.999
+            if self.score < 550:
+                self.score = 550
 
     def toDict(self):
         player = {}
         player[PLAYER_ID_KEY] = self.playerId
         player[PLAYER_NAME_KEY] = self.playerName
         player[PLAYER_SCORE_KEY] = self.score
+        player[PLAYER_WINS_KEY] = self.wins
+        player[PLAYER_LOSSES_KEY] = self.losses
         return player
 
 def playerFromDict(playerAsDict):
@@ -125,6 +154,14 @@ class Matchmaking:
                 queue = queueFromDict(queueInFile)
                 if queue.isValid():
                     self.queue = queue
+                    
+    def decay(self):
+        newPlayers = []
+        for player in self.players:
+            player.decayScore()
+            newPlayers.append(player)
+        self.players = newPlayers
+        self.save()
     
     def getDefaultMatchmakingFile(self):
         matchmaking = {}
@@ -174,7 +211,7 @@ class Matchmaking:
             self.save()
             return OperationResult(False, Strings.ERROR_MATCHMAKING_USER_ALREADY_REGISTERED % (playerId, self.formatName))
         else:
-            registeredPlayer = Player(playerId, playerName, 1000)
+            registeredPlayer = Player(playerId, playerName, 500)
             self.players.append(registeredPlayer)
             self.save()
             return OperationResult(True, Strings.MESSAGE_MATCHMAKING_USER_REGISTERED % (playerId, self.formatName))
@@ -217,11 +254,10 @@ class Matchmaking:
         else:
             return OperationResult(False, Strings.ERROR_MATCHMAKING_NO_ACTIVE_MATCHES)
 
-
-    def startMatch(self, player1:int, player2:int):
+    def startMatch(self, player1:int, player2:int, force:bool):
         isMatchValid = self.isNewMatchValid(player1, player2)
 
-        if isMatchValid.wasSuccessful():
+        if isMatchValid.wasSuccessful() or force:
             activeMatch = ActiveMatch(player1, player2)
             self.activeMatches.append(activeMatch)
             self.save()
@@ -312,8 +348,8 @@ class MatchmakingManager:
     def registerPlayer(self, playerId: int, playerName: str):
         return self.matchmaking.registerPlayer(playerId, playerName)
             
-    def createMatch(self, playerA: int, playerB: int):
-        return self.matchmaking.startMatch(playerA, playerB)
+    def createMatch(self, playerA: int, playerB: int, force: bool):
+        return self.matchmaking.startMatch(playerA, playerB, force)
 
     def endMatch(self, winnerId:int):
         return self.matchmaking.endMatch(winnerId)
@@ -344,3 +380,6 @@ class MatchmakingManager:
     
     def getPlayers(self):
         return self.matchmaking.getPlayers()
+    
+    def decay(self):
+        self.matchmaking.decay()

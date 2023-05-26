@@ -19,8 +19,6 @@ PLAYERS_KEY = 'players'
 OPEN_KEY = 'open'
 STATE_KEY = 'state'
 FORMAT_KEY = 'format'
-HAS_DECK_KEY = 'has_deck'
-DECK_PATH_KEY = "deck_path"
 
 MATCHES_KEY = 'matches'
 MATCH_KEY = 'match'
@@ -49,8 +47,6 @@ class Player:
 		self.discordId = discordId
 		self.challongeId = 0
 		self.dbName = ""
-		self.hasDeck = False
-		self.deckPath = None
 	
 	def setChallongePlayerId(self, challongeId: int):
 		self.challongeId = challongeId
@@ -58,22 +54,12 @@ class Player:
 	def setDbName(self, dbName:str):
 		self.dbName = dbName
 
-	def setDeckPath(self, deckPath:str):
-		if not deckPath == None:
-			self.deckPath = deckPath
-			self.hasDeck = True
-		else:
-			self.deckPath = None
-			self.hasDeck = False
-
 	def toJson(self):
 		dict = {}
 		dict[NAME_KEY] = self.username
 		dict[ID_KEY] = self.discordId
 		dict[CHALLONGE_PLAYER_ID_KEY] = self.challongeId
 		dict[DB_NAME_KEY] = self.dbName
-		dict[HAS_DECK_KEY] = self.hasDeck
-		dict[DECK_PATH_KEY] = self.deckPath
 		return dict
 	
 	def getChallongePlayerId(self):
@@ -92,9 +78,6 @@ def playerFromResponse(playerAsDict:dict):
 	challongeId = playerAsDict[CHALLONGE_PLAYER_ID_KEY]
 	player.setChallongePlayerId(challongeId)
 	player.setDbName(playerAsDict[DB_NAME_KEY])
-	deckPath = playerAsDict[DECK_PATH_KEY]
-	if deckPath != None:
-		player.setDeckPath(deckPath)
 	return player
 
 class OpenMatch:
@@ -182,14 +165,6 @@ class Tournament:
 		for player in self.players:
 			if player.getChallongePlayerId() == challongeId:
 				return player
-
-	def cleardecks(self):
-		newPlayers = []
-		for player in self.players:
-			player.setDeckPath(None)
-			newPlayers.append(player)
-		self.players = newPlayers
-		self.save()
 
 	def removePlayer(self, playername:str):
 		player = self.getPlayerForName(playername)
@@ -293,15 +268,6 @@ class TournamentManager:
 	def getTournamentFormat(self):
 		tournament = getTournamentForServer(self.serverId)
 		return tournament.getFormat()
-
-	def setDeckForPlayer(self,playername:str, path:str):
-		tournament = getTournamentForServer(self.serverId)
-		player = tournament.getPlayerForName(playername)
-		if player == None:
-			return OperationResult(False, Strings.ERROR_MESSAGE_CANT_DROP % playername)
-		player.setDeckPath(path)
-		tournament.save()
-		return OperationResult(True, Strings.BOT_MESSAGE_DECKLIST_SUBMITTED)
 		
 	def getMatches(self):
 		tournament = getTournamentForServer(self.serverId)
@@ -336,7 +302,6 @@ class TournamentManager:
 		player = tournament.getPlayerForName(playerName)
 		playerId = player.getChallongePlayerId()
 		matches = self.getActiveMatches()
-		print(playerId)
 		for match in matches:
 			if match[PLAYER_1_ID_KEY] == playerId or match[PLAYER_2_ID_KEY] == playerId:
 				# This is the match
@@ -365,7 +330,7 @@ class TournamentManager:
 					player.challongeId = challongePlayer['id']
 		tournament.save()
 
-	def registerToTournament(self, playerName: str, playerId: int):
+	def registerToTournament(self, playerName: str, playerId: int, path: str) -> OperationResult:
 		tournament = getTournamentForServer(self.serverId)
 		if tournament == None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
@@ -377,7 +342,8 @@ class TournamentManager:
 				return result
 			else:
 				return OperationResult(False, Strings.ERROR_MESSAGE_PLAYER_ALREADY_JOINED)
-		return tournament.addPlayer(playerName, playerId)
+		else:
+			return OperationResult(False, Strings.ERROR_MESSAGE_TOURNAMENT_ALREADY_STARTED)
 
 	def drop(self, playerName:str):
 		tournament = getTournamentForServer(self.serverId)
@@ -426,6 +392,18 @@ class TournamentManager:
 			}
 		matches = challonge.matches.index(tournament.getId(), **params)
 		return matches
+
+	def getWinnerFromLoser(self, player_name:str):
+		tournament = getTournamentForServer(self.serverId)
+		player = tournament.getPlayerForName(player_name)
+		playerId = player.getChallongePlayerId()
+		matches = self.getActiveMatches()
+		for match in matches:
+			if match[PLAYER_1_ID_KEY] == playerId:
+				return tournament.getPlayerFromChallongeId(match[PLAYER_2_ID_KEY])
+			if match[PLAYER_2_ID_KEY] == playerId:
+				return tournament.getPlayerFromChallongeId(match[PLAYER_1_ID_KEY])
+				
 
 	def getReadableActiveMatches(self):
 		tournament = self.getTournamentForServer()

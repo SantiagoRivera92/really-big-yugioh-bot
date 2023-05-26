@@ -14,3 +14,8 @@ class ServerConfig:
             return OperationResult(True, "")
         
         return OperationResult(False, Strings.ERROR_PAY_ME_MONEY % serverId)
+    
+    def getEnabledServers(self):
+        with open(self.filename) as serverList:
+            serverList = json.load(serverList)
+        return serverList

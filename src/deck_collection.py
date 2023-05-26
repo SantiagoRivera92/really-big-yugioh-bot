@@ -166,6 +166,7 @@ class DeckCollectionManager:
 		return self.deckCollection.addDeck(playerName, deck)
 
 	def beginCollection(self):
+		self.cleardecks()
 		return self.deckCollection.enableDeckCollection()
 
 	def endCollection(self):
