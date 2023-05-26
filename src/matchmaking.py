@@ -84,7 +84,9 @@ def playerFromDict(playerAsDict):
     playerId = playerAsDict.get(PLAYER_ID_KEY)
     playerName = playerAsDict.get(PLAYER_NAME_KEY)
     playerScore = playerAsDict.get(PLAYER_SCORE_KEY)
-    return Player(playerId, playerName, playerScore)
+    playerWins = playerAsDict.get(PLAYER_WINS_KEY)
+    playerLosses = playerAsDict.get(PLAYER_LOSSES_KEY)
+    return Player(playerId, playerName, playerScore, playerWins, playerLosses)
 
 class ActiveMatch():
     def __init__(self, player1:int, player2:int):
@@ -211,7 +213,7 @@ class Matchmaking:
             self.save()
             return OperationResult(False, Strings.ERROR_MATCHMAKING_USER_ALREADY_REGISTERED % (playerId, self.formatName))
         else:
-            registeredPlayer = Player(playerId, playerName, 500)
+            registeredPlayer = Player(playerId, playerName, 500, 0, 0)
             self.players.append(registeredPlayer)
             self.save()
             return OperationResult(True, Strings.MESSAGE_MATCHMAKING_USER_REGISTERED % (playerId, self.formatName))
