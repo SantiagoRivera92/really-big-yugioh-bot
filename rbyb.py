@@ -61,6 +61,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = MyClient(intents=intents)
 
+decay: bool = False
+
 
 def startBot():
 	bot.run(credentials.getDiscordAPIKey())
@@ -185,7 +187,6 @@ class FormatForPartialCardnameCallback:
 
 # Events and commands
 
-decay = False
 
 @bot.event
 async def on_ready():
@@ -193,6 +194,7 @@ async def on_ready():
     bot.loop.create_task(decay_scores())
     
 async def decay_scores():
+	global decay
 	if decay:
 		servers: List[int] = serverConfig.getEnabledServers()
 		for serverId in servers:
@@ -1414,12 +1416,10 @@ async def report_tournament_loss(interaction: discord.Interaction):
 		return
 	await interaction.response.defer(ephemeral=False)
 	serverId = interaction.guild_id
-	player_name = "%s#%s" % (interaction.user.name,
-							 interaction.user.discriminator)
+	player_name = "%s#%s" % (interaction.user.name, interaction.user.discriminator)
+
 	manager = TournamentManager(credentials, serverId)
-
-	result = manager.reportLoss(player_name)
-
+ 
 	channelName = getChannelName(interaction.channel)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
  
@@ -1427,17 +1427,17 @@ async def report_tournament_loss(interaction: discord.Interaction):
  
 	t_winner = manager.getWinnerFromLoser(player_name)
  
-	winner = matchmakingManager.getPlayerForId(t_winner.discordId)
-	loser = matchmakingManager.getPlayerForId(interaction.user.id)
- 
-	if winner == None:
-		matchmakingManager.registerPlayer(t_winner.discordId, t_winner.username)
- 
-	if loser == None:
-		matchmakingManager.registerPlayer(interaction.user.id, player_name)
-  
-	matchmakingManager.createMatch(t_winner.discordId, interaction.user.id, True)
-	matchmakingManager.endMatch(t_winner.discordId)
+	if t_winner != None:
+		winner = matchmakingManager.getPlayerForId(t_winner.discordId)
+		loser = matchmakingManager.getPlayerForId(interaction.user.id)
+		if winner == None:
+			matchmakingManager.registerPlayer(t_winner.discordId, t_winner.username)
+		if loser == None:
+			matchmakingManager.registerPlayer(interaction.user.id, player_name)
+		matchmakingManager.createMatch(t_winner.discordId, interaction.user.id, True)
+		matchmakingManager.endMatch(t_winner.discordId)
+
+	result = manager.reportLoss(player_name)
  
 	await interaction.followup.send(result.getMessage())
 
@@ -1452,7 +1452,6 @@ async def force_tournament_loss(interaction: discord.Interaction, player_name: s
 	serverId = interaction.guild_id
 	serverId = interaction.guild_id
 	manager = TournamentManager(credentials, serverId)
-	result = manager.reportLoss(player_name)
 
 	channelName = getChannelName(interaction.channel)
 	forcedFormat = config.getForcedFormat(channelName, serverId)
@@ -1461,17 +1460,17 @@ async def force_tournament_loss(interaction: discord.Interaction, player_name: s
  
 	t_winner = manager.getWinnerFromLoser(player_name)
  
-	winner = matchmakingManager.getPlayerForId(t_winner.discordId)
-	loser = matchmakingManager.getPlayerForId(interaction.user.id)
+	if t_winner != None:
+		winner = matchmakingManager.getPlayerForId(t_winner.discordId)
+		loser = matchmakingManager.getPlayerForId(interaction.user.id)
+		if winner == None:
+			matchmakingManager.registerPlayer(t_winner.discordId, t_winner.username)
+		if loser == None:
+			matchmakingManager.registerPlayer(interaction.user.id, player_name)
+		matchmakingManager.createMatch(t_winner.discordId, interaction.user.id, True)
+		matchmakingManager.endMatch(t_winner.discordId)
  
-	if winner == None:
-		matchmakingManager.registerPlayer(t_winner.discordId, t_winner.username)
- 
-	if loser == None:
-		matchmakingManager.registerPlayer(interaction.user.id, player_name)
-  
-	matchmakingManager.createMatch(t_winner.discordId, interaction.user.id, True)
-	matchmakingManager.endMatch(t_winner.discordId)
+	result = manager.reportLoss(player_name)
  
 	await interaction.followup.send(result.getMessage())
 

@@ -403,6 +403,7 @@ class TournamentManager:
 				return tournament.getPlayerFromChallongeId(match[PLAYER_2_ID_KEY])
 			if match[PLAYER_2_ID_KEY] == playerId:
 				return tournament.getPlayerFromChallongeId(match[PLAYER_1_ID_KEY])
+		print("Couldn't find a match for %s" % player_name)
 				
 
 	def getReadableActiveMatches(self):
