@@ -3,7 +3,7 @@ import json
 import shutil
 from typing import List
 from src.utils import OperationResult
-from src.deck_validation import Ydk
+from src.deck_validation import Ydk, Deck
 import src.strings as Strings
 
 FOLDER_NAME = "./json/deckcollection/%d/%s/"
@@ -27,13 +27,13 @@ class Deck:
 		deck[DECK_FILENAME_KEY] = self.deckFileName
 		return deck
 	
-	def toReadableDeck(self):
+	def toReadableDeck(self) -> Deck:
 		filename = self.deckFileName
-		with open(filename) as file:
+		with open(filename, encoding="utf-8") as file:
 			decklist = file.read()
 			ydk = Ydk(decklist)
-			readableDecklist = ydk.getDeck()
-			return readableDecklist
+			readable_decklist = ydk.get_deck()
+			return readable_decklist
 
 def deckFromDict(dictionary:dict):
 	return Deck(dictionary.get(PLAYER_NAME_KEY), dictionary.get(DECK_FILENAME_KEY))
@@ -137,7 +137,7 @@ class DeckCollection:
 			players.append(deck.playerName)
 		return players
 	
-	def getDecklistForPlayer(self, playerName:str):
+	def get_decklistForPlayer(self, playerName:str):
 		for deck in self.decks:
 			if deck.playerName == playerName:
 				return deck.deckFileName
@@ -172,8 +172,8 @@ class DeckCollectionManager:
 	def endCollection(self):
 		return self.deckCollection.disableDeckCollection()
 
-	def getDecklistForPlayer(self, playerName:str):
-		return self.deckCollection.getDecklistForPlayer(playerName)
+	def get_decklist_for_player(self, playerName:str):
+		return self.deckCollection.get_decklistForPlayer(playerName)
 
 	def getReadableDecklistForPlayer(self, playerName:str):
 		return self.deckCollection.getReadableDecklistForPlayer(playerName)

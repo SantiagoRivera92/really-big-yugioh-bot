@@ -8,51 +8,40 @@ THREAD_CHANNEL_KEY = "thread"
 OTHER_KEY = "other"
 
 class OperationResult:
+	
 	def __init__(self, success, message):
 		self.success = success
 		self.message = message
-		self.hasExtras = False
-		self.extraParam = None
 
-	def addExtras(self, extraParam):
-		self.extraParam = extraParam
-		self.hasExtras = True
-
-	def hasExtraParams(self):
-		return self.hasExtras
-
-	def getExtras(self):
-		if self.hasExtras:
-			return self.extraParam
-		return None
-
-	def wasSuccessful(self):
+	def was_successful(self):
 		return self.success
 
-	def getMessage(self):
+	def get_message(self):
 		return self.message
 
-class MyClient(discord.Client):
-    def __init__(self, *, intents: discord.Intents):
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
+class ReallyBigYugiohBot(discord.Client):
+	
+	def __init__(self, *, intents: discord.Intents):
+		super().__init__(intents=intents)
+		self.tree = app_commands.CommandTree(self)
 
-    async def setup_hook(self):
-        await self.tree.sync()
+	async def setup_hook(self):
+		await self.tree.sync()
 
-def getStatusInBanlist(cardId, banlist):
-	banlistAsLines = banlist.split("\n")
-	idAsString = str(cardId)
-	for line in banlistAsLines:
-		if idAsString in line:
-			idCount = int(math.log10(cardId))+1
-			line = line[idCount+1:idCount+2]
+def get_status_in_banlist(cardId, banlist):
+	banlist_as_lines = banlist.split("\n")
+	id_as_string = str(cardId)
+	for line in banlist_as_lines:
+		id_in_line = line.split(' ')[0]
+		if id_as_string == id_in_line:
+			id_count = int(math.log10(cardId))+1
+			line = line[id_count+1:id_count+2]
 			if line == "-":
 				line = "-1"
 			return int(line)
 	return -1
 
-def getChannelName(channel:discord.channel):
+def get_channel_name(channel:discord.channel):
 	if isinstance(channel, discord.channel.DMChannel):
 		return DM_CHANNEL_KEY
 	elif isinstance(channel, discord.channel.GroupChannel):

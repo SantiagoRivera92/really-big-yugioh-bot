@@ -46,9 +46,9 @@ class DeckAsImageGenerator:
 		return "./img/zip/decks.zip"
 
 	def buildImageFromDeck(self, deck: ValidationDeck, filename: str, deckname:str):
-		mainDeckImages = [self.cardCollection.getCardImageFromId(card.cardId) for card in deck.getMainDeck() for _ in range(card.copies)]
-		extraDeckImages = [self.cardCollection.getCardImageFromId(card.cardId) for card in deck.getExtraDeck() for _ in range(card.copies)]
-		sideDeckImages = [self.cardCollection.getCardImageFromId(card.cardId) for card in deck.getSideDeck() for _ in range(card.copies)]
+		mainDeckImages = [self.cardCollection.getCardImageFromId(card.card_id) for card in deck.get_main_deck() for _ in range(card.copies)]
+		extraDeckImages = [self.cardCollection.getCardImageFromId(card.card_id) for card in deck.get_extra_deck() for _ in range(card.copies)]
+		sideDeckImages = [self.cardCollection.getCardImageFromId(card.card_id) for card in deck.get_side_deck() for _ in range(card.copies)]
 
 		mainDeckCount = len(mainDeckImages)
 		extraDeckCount = len(extraDeckImages)
@@ -108,24 +108,32 @@ class DeckAsImageGenerator:
 			y = headerMargin + (i // 10) * (cardHeight + mainDeckMargin)
 			deckImage.paste(img, (x, y))
 
-		extraDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - extraDeckCount * cardWidth) / (extraDeckCount - 1)
+		if hasExtraDeck:
+			if (extraDeckCount > 1):
+				extraDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - extraDeckCount * cardWidth) / (extraDeckCount - 1)
+			else:
+				extraDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - cardWidth)
+       
 
-		# Draw extra deck cards
-		for i, imageUrl in enumerate(extraDeckImages):
-			img = Image.open(imageUrl)
-			x = lateralMargin + i * cardWidth + i * extraDeckMargin
-			y = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin
-			deckImage.paste(img, (round(x), y))
+			# Draw extra deck cards
+			for i, imageUrl in enumerate(extraDeckImages):
+				img = Image.open(imageUrl)
+				x = lateralMargin + i * cardWidth + i * extraDeckMargin
+				y = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin
+				deckImage.paste(img, (round(x), y))
    
-		
-		sideDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - sideDeckCount * cardWidth) / (sideDeckCount - 1)
+		if hasSideDeck:
+			if (sideDeckCount > 1):
+				sideDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - sideDeckCount * cardWidth) / (sideDeckCount - 1)
+			else:
+				sideDeckMargin = (10 * cardWidth + 9 * mainDeckMargin - cardWidth)
 
-		# Draw side deck cards
-		for i, imageUrl in enumerate(sideDeckImages):
-			img = Image.open(imageUrl)
-			x = lateralMargin + i * cardWidth + i * sideDeckMargin
-			y = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin + cardHeight + sectionMargin
-			deckImage.paste(img, (round(x), y))
+			# Draw side deck cards
+			for i, imageUrl in enumerate(sideDeckImages):
+				img = Image.open(imageUrl)
+				x = lateralMargin + i * cardWidth + i * sideDeckMargin
+				y = headerMargin + mainDeckRows * (cardHeight + mainDeckMargin) + mainDeckMargin + sectionMargin + cardHeight + sectionMargin
+				deckImage.paste(img, (round(x), y))
    
 		# Draw count rectangles
   
@@ -134,14 +142,16 @@ class DeckAsImageGenerator:
 			mainDeckRect[0],
 			mainDeckRect[1] - 108,
 			mainDeckRect[2],
-			mainDeckRect[1] -8
+			mainDeckRect[1] - 8
 		)
 		draw.rectangle(mainDeckHeaderRect, outline=(255, 255, 255), fill=(32, 32, 32), width=3)
 
 		# Add text to the main deck header rectangle
 		mainDeckHeaderText = "Main deck: %d" % mainDeckCount
 		textFont = ImageFont.truetype(FONT_FILE, 44)
-		textWidth, textHeight = draw.textsize(mainDeckHeaderText, font=textFont)
+		textBoundingBox = draw.textbbox((0, 0), mainDeckHeaderText, font=textFont)
+		textWidth = textBoundingBox[2] - textBoundingBox[0]
+		textHeight = textBoundingBox[3] - textBoundingBox[1]
 		textX = mainDeckHeaderRect[0] + 30
 		textY = mainDeckHeaderRect[1] + (mainDeckHeaderRect[3] - mainDeckHeaderRect[1] - textHeight) // 2
 		draw.text((textX, textY), mainDeckHeaderText, font=textFont, fill=(255, 255, 255))
@@ -154,11 +164,13 @@ class DeckAsImageGenerator:
 				extraDeckRect[2],
 				extraDeckRect[1] - 8
 			)
-			draw.rectangle(extraDeckHeaderRect, outline=(255, 255, 255),fill=(32, 32, 32), width=3)
+			draw.rectangle(extraDeckHeaderRect, outline=(255, 255, 255), fill=(32, 32, 32), width=3)
 
 			# Add text to the extra deck header rectangle
 			extraDeckHeaderText = "Extra deck: %d" % extraDeckCount
-			textWidth, textHeight = draw.textsize(extraDeckHeaderText, font=textFont)
+			textBoundingBox = draw.textbbox((0, 0), extraDeckHeaderText, font=textFont)
+			textWidth = textBoundingBox[2] - textBoundingBox[0]
+			textHeight = textBoundingBox[3] - textBoundingBox[1]
 			textX = extraDeckHeaderRect[0] + 30
 			textY = extraDeckHeaderRect[1] + (extraDeckHeaderRect[3] - extraDeckHeaderRect[1] - textHeight) // 2
 			draw.text((textX, textY), extraDeckHeaderText, font=textFont, fill=(255, 255, 255))
@@ -171,23 +183,25 @@ class DeckAsImageGenerator:
 				sideDeckRect[2],
 				sideDeckRect[1] - 8
 			)
-			draw.rectangle(sideDeckHeaderRect, outline=(255, 255, 255), fill=(32, 32, 32),width=3)
+			draw.rectangle(sideDeckHeaderRect, outline=(255, 255, 255), fill=(32, 32, 32), width=3)
 
 			# Add text to the side deck header rectangle
 			sideDeckHeaderText = "Side deck: %d" % sideDeckCount
-			textWidth, textHeight = draw.textsize(sideDeckHeaderText, font=textFont)
+			textBoundingBox = draw.textbbox((0, 0), sideDeckHeaderText, font=textFont)
+			textWidth = textBoundingBox[2] - textBoundingBox[0]
+			textHeight = textBoundingBox[3] - textBoundingBox[1]
 			textX = sideDeckHeaderRect[0] + 30
 			textY = sideDeckHeaderRect[1] + (sideDeckHeaderRect[3] - sideDeckHeaderRect[1] - textHeight) // 2
 			draw.text((textX, textY), sideDeckHeaderText, font=textFont, fill=(255, 255, 255))
 
-
 		# Add text to the header
 		headerText = deckname
 		headerFont = ImageFont.truetype(FONT_FILE, 86)
-		headerTextWidth, headerTextHeight = draw.textsize(headerText, font=headerFont)
+		headerBoundingBox = draw.textbbox((0, 0), headerText, font=headerFont)
+		headerTextWidth = headerBoundingBox[2] - headerBoundingBox[0]
+		headerTextHeight = headerBoundingBox[3] - headerBoundingBox[1]
 		headerTextX = (width - headerTextWidth) // 2
-		headerTextY = (headerMargin - 100 - headerTextHeight) // 2
-
+		headerTextY = (100 - headerTextHeight) // 2
 		draw.text((headerTextX, headerTextY), headerText, font=headerFont, fill=(255, 255, 255))
 
 		filename = "./img/decks/%s.jpg" % filename

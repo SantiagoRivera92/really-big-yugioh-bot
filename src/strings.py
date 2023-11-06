@@ -56,7 +56,7 @@ ERROR_MATCHMAKING_REGISTER_FIRST = "You aren't registered to the league. Please 
 ERROR_MATCHMAKING_NO_ACTIVE_MATCHES = "You have no active matches."
 ERROR_MATCHMAKING_ACTIVE_MATCH_IN_PROGRESS = "<@%d> has an active match already" 
 
-MESSAGE_MATCHMAKING_USER_REGISTERED = "User <@%d> was registered for %s with a rating of 1000!"
+MESSAGE_MATCHMAKING_USER_REGISTERED = "User <@%d> was registered for %s with a rating of 500!"
 MESSAGE_MATCHMAKING_JOINED_QUEUE = "You have joined the queue! If someone else joins the queue in 10 minutes, a ranked match will start."
 MESSAGE_MATCHMAKING_MATCH_STARTED = "A %s ranked match has started between <@%d> and <@%d>."
 MESSAGE_MATCHMAKING_MATCH_CANCELLED = "The match between <@%d> and <@%d> has been cancelled by <@%d>'s request."
@@ -80,6 +80,7 @@ ERROR_MESSAGE_JOIN_LEAGUE_FIRST = "You are not registered in the %s league."
 ERROR_MESSAGE_PLAYER_HASNT_JOINED_LEAGUE = "Player %s is not registered to the league"
 ERROR_MESSAGE_NO_FORMATS_ENABLED = "No formats have been enabled in this server. To add a format, use /add_format"
 ERROR_MESSAGE_PARTIAL_SEARCH_FAILED = "There are no cards with %s in their name."
+ERROR_MESSAGE_NO_CARDS_WITH_NAME = "%s is not a Yu-Gi-Oh! card."
 ERROR_MESSAGE_NO_ACTIVE_MATCHES_IN_LEAGUE = "There are no active matches in the %s league."
 ERROR_MESSAGE_PLAYER_HAS_NO_MATCHES_PENDING = "Player %s has no pending active matches."
 ERROR_MESSAGE_BOT_DISABLED_IN_CHANNEL = "The bot is disabled in this channel!"
@@ -127,6 +128,7 @@ BOT_MESSAGE_TOURNAMENT_STARTED = "Tournament has started! You can check round 1 
 BOT_MESSAGE_TOURNAMENT_ENDED =  "Tournament has finished! You can see the standings in %s"
 BOT_MESSAGE_DECKLIST_SUBMITTED = "Your decklist was submitted!"
 BOT_MESSAGE_LOSS_REGISTERED = "<@%d> lost to <@%d>."
+BOT_MESSAGE_NEW_MATCH = "<@%d> vs <@%d>"
 
 BOT_MESSAGE_ACTIVE_MATCH_FORMAT = "%s (%.2f) vs %s (%.2f)"
 
@@ -189,7 +191,11 @@ COMMAND_NAME_TOURNAMENT_GET_ALL_DECK_IMGS = "download_img_decks"
 COMMAND_NAME_TOURNAMENT_CONFIRM_DECK = "confirm_deck" # Done
 COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE = "t_challonge_cleanup" # Done
 COMMAND_NAME_SHARE_DECK_DB = "share_deck_image_db" #Done
-COMMAND_NAME_SHARE_DECK_YDK = "share_deck" #Done
 
-COMMAND_NAME_SET_DB_NAME = "set_db_name"
-COMMAND_NAME_GET_DB_NAME = "get_db_name"
+COMMAND_NAME_SHARE_DECK_DB = "share_deck_db" #Done
+COMMAND_NAME_SHARE_DECK_YDK = "share_deck" #Done
+COMMAND_NAME_SHARE_DECK_DB_TXT = "share_deck_db_txt" # Done
+COMMAND_NAME_SHARE_DECK_YDK_TXT = "share_deck_txt" # Done
+
+COMMAND_NAME_SET_DB_NAME = "set_db_name" # Done
+COMMAND_NAME_GET_DB_NAME = "get_db_name" # Done

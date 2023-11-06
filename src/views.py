@@ -15,7 +15,7 @@ class Dropdown(discord.ui.Select):
 
 	async def callback(self, interaction: discord.Interaction):
 		if self.callbackFunc != None:
-			await self.callbackFunc.executeCallback(self.values[0], self.params)
+			await self.callbackFunc.execute_callback(self.values[0], self.params)
 
 class PaginationView(discord.ui.View):
 

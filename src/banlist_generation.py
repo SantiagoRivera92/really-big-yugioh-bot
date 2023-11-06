@@ -16,9 +16,9 @@ header= {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
 ignoredSets = [
 	"DL1", "DL2", "DL3", "DL4", "DL5", "DL6", "DL7", "DL8", "DL9", "DL10", "DL11", "DL12", "DL13", "DL14", "DL15", "DL16", "DL17", "DL18",
 	"HL1", "HL2", "HL03", "HL04", "HL05", "HL06", "HL07", 
-	"LART", 
+	"LART", "RA01",
 	"DTP1","DT01","DT02","DT03", "DT04", "DT05", "DT06", "DT07", 
-	"OP01", "OP02", "OP03", "OP04", "OP05", "OP06", "OP07", "OP08", "OP09", "OP10", "OP11", "OP12", "OP13", "OP14", "OP15", "OP16", "OP17", "OP18", "OP19", "OP20"
+	"OP01", "OP02", "OP03", "OP04", "OP05", "OP06", "OP07", "OP08", "OP09", "OP10", "OP11", "OP12", "OP13", "OP14", "OP15", "OP16", "OP17", "OP18", "OP19", "OP20", "OP21", "OP22", "OP23", "OP24", "OP25", "OP26", "OP27", "OP28", "OP29", "OP30"
 	]
 
 

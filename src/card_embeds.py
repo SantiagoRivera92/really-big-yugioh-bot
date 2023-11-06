@@ -1,7 +1,7 @@
 import discord
 import json
 from discord import Embed
-from src.utils import getStatusInBanlist
+from src.utils import get_status_in_banlist
 
 CARD_ID_KEY = 'id'
 CARD_NAME_KEY = 'name'
@@ -130,7 +130,7 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 	race = card.get(CARD_RACE_KEY)
 	attribute = card.get(CARD_ATTRIBUTE_KEY)
 	imageUrl = card.get(CARD_IMAGES_KEY)[0].get(CARD_IMAGE_URL_KEY)
-	level =card.get(CARD_LEVEL_KEY)
+	level = card.get(CARD_LEVEL_KEY)
 	attack = card.get(CARD_ATK_KEY)
 	defense = card.get(CARD_DEF_KEY)
 	scale = card.get(CARD_SCALE_KEY)
@@ -254,7 +254,7 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 	embed.set_author(name=bot.user.name, icon_url=bot.user.avatar.url)
 	embed.set_thumbnail(url=imageUrl)
 
-	status = getStatusInBanlist(cardId, banlist)
+	status = get_status_in_banlist(cardId, banlist)
 	statusAsString = getStatusAsString(status)
 	embed.add_field(name="Status (%s):"%formatName, value=statusAsString)
 	if (cardType == TYPE_MONSTER):
@@ -283,8 +283,12 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 		else:
 			formattedCardType = "%s %s"%(race, formattedType)
 		embed.add_field(name="Type", value=formattedCardType, inline=True)
-
-	embed.add_field(name="Card effect", value=formatDesc(card),inline=False)
+	desc = formatDesc(card)
+	if type(desc) == list:
+		embed.add_field(name="Monster Effect", value=desc[0], inline=False)
+		embed.add_field(name="Pendulum Effect", value=desc[1], inline=False)
+	else:
+		embed.add_field(name="Card effect", value=desc,inline=False)
 	if (cardType == TYPE_MONSTER):
 		if TYPE_LINK in cType:
 			embed.add_field(name="Stats", value="%s %d"%(EMOJI_ATK ,attack))
@@ -309,7 +313,7 @@ def cardToEmbed(card, banlistFile, formatName, bot):
 	return embed
 
 def formatDesc(card):
-	cardDesc = card.get(CARD_DESC_KEY)
+	cardDesc: str = card.get(CARD_DESC_KEY)
 
 	cardName = "\"%s\""%card.get(CARD_NAME_KEY)
 	pluralCardName = "\"%s(s)\""%card.get(CARD_NAME_KEY)
@@ -380,6 +384,27 @@ def formatDesc(card):
 		while cleanupItem.get(ALIAS_BEFORE_KEY) in cardDesc:
 			cardDesc = cardDesc.replace(cleanupItem.get(ALIAS_BEFORE_KEY), cleanupItem.get(ALIAS_AFTER_KEY))
 
+	if len(cardDesc) > 1024:
+		if "monster_desc" in card and len(card["monster_desc"]) < 1024:
+			if "Monster Effect" in card["monster_desc"]:
+				card[CARD_DESC_KEY] = card["monster_desc"]
+				card["monster_desc"] = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+				return formatDesc(card)
+
+		if "Monster Effect" in cardDesc:
+			## This is a Pendulum Monster whose entire effect is longer than 1024 characters.
+			desc = cardDesc.split("Monster Effect")
+			for i, item in enumerate(desc):
+				item = item.replace("Pendulum Effect\n", "")
+				item = item.replace("Monster Effect\n", "")
+				desc[i] = item
+			return desc
+		newCardDesc = cardDesc.replace("**", "")
+		if len(newCardDesc) > 1024:
+			print("Card is too fucking long man")
+		else:
+			return newCardDesc
+ 
 	return cardDesc
 
 def getArrows(card):

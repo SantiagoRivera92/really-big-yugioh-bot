@@ -21,8 +21,8 @@ header = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
 							'Connection': 'keep-alive'}
 
 class CredentialsManager:
-	def __init__(self, credentialsFile):
-		with open(credentialsFile) as cred:
+	def __init__(self):
+		with open("json/credentials.json") as cred:
 			self.credentials = json.load(cred)
 
 	def getDiscordAPIKey(self):

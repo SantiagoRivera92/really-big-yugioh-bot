@@ -4,7 +4,7 @@ from src.credentials_manager import CredentialsManager
 from src.utils import OperationResult
 import os
 import json
-from typing import List
+from typing import List, Union
 import src.strings as Strings
 
 foldername = "json/tournaments/%d"
@@ -55,12 +55,12 @@ class Player:
 		self.dbName = dbName
 
 	def toJson(self):
-		dict = {}
-		dict[NAME_KEY] = self.username
-		dict[ID_KEY] = self.discordId
-		dict[CHALLONGE_PLAYER_ID_KEY] = self.challongeId
-		dict[DB_NAME_KEY] = self.dbName
-		return dict
+		dictionary = {}
+		dictionary[NAME_KEY] = self.username
+		dictionary[ID_KEY] = self.discordId
+		dictionary[CHALLONGE_PLAYER_ID_KEY] = self.challongeId
+		dictionary[DB_NAME_KEY] = self.dbName
+		return dictionary
 	
 	def getChallongePlayerId(self):
 		return self.challongeId
@@ -156,10 +156,11 @@ class Tournament:
 			return OperationResult(False, Strings.ERROR_MESSAGE_SIGNUPS_CLOSED)
 		return OperationResult(False, Strings.ERROR_MESSAGE_ALREADY_JOINED_TOURNAMENT)
 
-	def getPlayerForName(self, playername:str):
+	def getPlayerForName(self, playername:str) -> Union[Player|None]:
 		for player in self.players:
 			if player.getUsername() == playername:
 				return player
+		return None
 	
 	def getPlayerFromChallongeId(self, challongeId:int):
 		for player in self.players:
@@ -188,17 +189,17 @@ class Tournament:
 		return self
 		
 	def toJson(self):
-		dict = {}
-		dict[OPEN_KEY] = self.tournamentIsOpen
-		dict[NAME_KEY] = self.name
-		dict[ID_KEY] = self.id
-		dict[URL_KEY] = self.url
-		dict[FORMAT_KEY] = self.format
+		dictionary = {}
+		dictionary[OPEN_KEY] = self.tournamentIsOpen
+		dictionary[NAME_KEY] = self.name
+		dictionary[ID_KEY] = self.id
+		dictionary[URL_KEY] = self.url
+		dictionary[FORMAT_KEY] = self.format
 		playersAsDicts = []
 		for player in self.players:
 			playersAsDicts.append(player.toJson())
-		dict[PLAYERS_KEY] = playersAsDicts
-		return dict
+		dictionary[PLAYERS_KEY] = playersAsDicts
+		return dictionary
 
 def tournamentFromResponse(tournament:dict, serverId:int):
 	challongeTournament = Tournament(serverId)
@@ -218,8 +219,8 @@ def getTournamentForServer(serverId:int):
 	tournamentFile = filename % serverId
 	if os.path.exists(tournamentFile):
 		with open(tournamentFile) as file:
-			dict = json.load(file)
-			tournament = tournamentFromResponse(dict, serverId)
+			dictionary = json.load(file)
+			tournament = tournamentFromResponse(dictionary, serverId)
 			return tournament
 
 class TournamentManager:
@@ -301,7 +302,7 @@ class TournamentManager:
 		tournament = getTournamentForServer(self.serverId)
 		player = tournament.getPlayerForName(playerName)
 		playerId = player.getChallongePlayerId()
-		matches = self.getActiveMatches()
+		matches = self.get_active_matches()
 		for match in matches:
 			if match[PLAYER_1_ID_KEY] == playerId or match[PLAYER_2_ID_KEY] == playerId:
 				# This is the match
@@ -317,9 +318,39 @@ class TournamentManager:
 				match[SCORES_CSV_KEY] = "1-0"
 
 				challonge.matches.update(tournament.id, match[ID_KEY], **match)
-				return OperationResult(True, Strings.BOT_MESSAGE_LOSS_REGISTERED % (loserAsPlayer.getDiscordId(), winnerAsPlayer.getDiscordId()))		
+				newMatches = self.get_active_matches()
+    
+				return OperationResult(True, self.get_active_matchesAsString(matches, newMatches, tournament, loserAsPlayer, winnerAsPlayer))		
 
 		return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_MATCH % playerName)
+
+	def get_active_matchesAsString(self, matches, newMatches, tournament: Tournament, loser: Player, winner: Player):
+		lossText = Strings.BOT_MESSAGE_LOSS_REGISTERED % (loser.getDiscordId(), winner.getDiscordId())
+		activeMatches = []
+
+		for newMatch in newMatches:
+			found = False
+			for oldMatch in matches:
+				if oldMatch["id"] == newMatch["id"]:
+					found = True
+					break
+			if not found:
+				activeMatches.append(newMatch)
+    
+		activeMatchesAsText = ""
+		if len(activeMatches) > 0:
+			activeMatchesAsText = "There are new active matches!\n\n"
+			for match in activeMatches:
+				player1 = match[PLAYER_1_ID_KEY]
+				player2 = match[PLAYER_2_ID_KEY]
+				p1 = tournament.getPlayerFromChallongeId(player1)
+				p2 = tournament.getPlayerFromChallongeId(player2)
+				p1id = p1.discordId
+				p2id = p2.discordId
+				activeMatchesAsText = activeMatchesAsText + Strings.BOT_MESSAGE_NEW_MATCH % (p1id, p2id) + "\n"
+			return lossText + "\n\n" + activeMatchesAsText
+		return lossText
+		
 
 	def updateChallongeIdsForAllPlayers(self):
 		tournament = getTournamentForServer(self.serverId)
@@ -349,13 +380,34 @@ class TournamentManager:
 		tournament = getTournamentForServer(self.serverId)
 		if tournament == None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
-		print ("Removing %s from the tournament" % playerName)
-		result = tournament.removePlayer(playerName)
+		print("Removing %s from the tournament" % playerName)
 		participants = challonge.participants.index(tournament.id)
+		activeMatches = self.get_active_matches()
+		player = tournament.getPlayerForName(playerName)
+		found = False
+		if (player != None):
+			for match in activeMatches:
+				if match[PLAYER_1_ID_KEY] == player.challongeId:
+					found = True
+					continue
+				if match[PLAYER_2_ID_KEY] == player.challongeId:
+					found = True
+					continue
+			if found:
+				self.reportLoss(playerName)
+				newActiveMatches = self.get_active_matches()
+				text = self.get_active_matchesAsString(activeMatches, newActiveMatches, tournament, player, self.getWinnerFromLoser(player))
+			
 		for participant in participants:
 			if (participant['name'] == playerName):
 				playerId = participant['id']
 				challonge.participants.destroy(tournament.id,playerId)
+
+		result = tournament.removePlayer(playerName)
+
+		if found:
+			result.message = result.message + text
+			
 		return result
 
 	def getTournamentInfo(self):
@@ -385,7 +437,7 @@ class TournamentManager:
 		challonge.tournaments.finalize(str(tournament.getId()))
 		return OperationResult(True, Strings.BOT_MESSAGE_TOURNAMENT_ENDED % tournament.getUrl())
 
-	def getActiveMatches(self):
+	def get_active_matches(self) -> List:
 		tournament = self.getTournamentForServer()
 		params = {
 				"state":"open"
@@ -396,13 +448,15 @@ class TournamentManager:
 	def getWinnerFromLoser(self, player_name:str):
 		tournament = getTournamentForServer(self.serverId)
 		player = tournament.getPlayerForName(player_name)
-		playerId = player.getChallongePlayerId()
-		matches = self.getActiveMatches()
-		for match in matches:
-			if match[PLAYER_1_ID_KEY] == playerId:
-				return tournament.getPlayerFromChallongeId(match[PLAYER_2_ID_KEY])
-			if match[PLAYER_2_ID_KEY] == playerId:
-				return tournament.getPlayerFromChallongeId(match[PLAYER_1_ID_KEY])
+		if (player != None):
+			playerId = player.getChallongePlayerId()
+			matches = self.get_active_matches()
+			for match in matches:
+				if match[PLAYER_1_ID_KEY] == playerId:
+					return tournament.getPlayerFromChallongeId(match[PLAYER_2_ID_KEY])
+				if match[PLAYER_2_ID_KEY] == playerId:
+					return tournament.getPlayerFromChallongeId(match[PLAYER_1_ID_KEY])
+		print(matches)
 		print("Couldn't find a match for %s" % player_name)
 				
 
@@ -412,7 +466,7 @@ class TournamentManager:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
 		if not tournament.isOpen():
 			return OperationResult(False, Strings.ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED)
-		matches = self.getActiveMatches()
+		matches = self.get_active_matches()
 		if len(matches) == 0:
 			return OperationResult(False, Strings.BOT_MESSAGE_TOURNAMENT_ENDED % tournament.getUrl())
 		activeMatches = "Active Matches:\n"
