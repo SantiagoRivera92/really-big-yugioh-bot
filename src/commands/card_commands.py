@@ -4,7 +4,7 @@ from typing import List
 from discord import app_commands
 from discord import Interaction
 
-from src.utils import ReallyBigYugiohBot, get_channel_name
+from src.utils import ReallyBigYugiohBot
 from src.card_collection import CardCollection
 from src.card_embeds import cardToEmbed
 
@@ -27,7 +27,7 @@ class CardCommandManager(GenericCommandManager):
                 await interaction.response.send_message(result.get_message())
                 return
             await interaction.response.defer()
-            channel_name = get_channel_name(interaction.channel)
+            channel_name = self.get_channel_name(interaction.channel)
             server_id = interaction.guild_id
             supported_formats = self.config.get_supported_formats(server_id)
             if len(supported_formats) == 0:
@@ -52,7 +52,7 @@ class CardCommandManager(GenericCommandManager):
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
                 return
             server_id = interaction.guild_id
-            channel_name = get_channel_name(interaction.channel)
+            channel_name = self.get_channel_name(interaction.channel)
             forced_format = self.config.get_forced_format(channel_name, server_id)
             if forced_format is None:
                 await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMAT_TIED, ephemeral=True)

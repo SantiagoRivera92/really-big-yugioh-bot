@@ -1,22 +1,27 @@
 from typing import List
 
-from discord import Interaction, app_commands, Attachment
+from discord import Interaction, app_commands, Attachment, File
 
 from src.commands.generic_command_manager import GenericCommandManager
 from src.card_collection import CardCollection
-from src.utils import ReallyBigYugiohBot, get_channel_name
+from src.utils import ReallyBigYugiohBot
 from src.banlist_validation import BanlistValidator
 
 import src.strings as Strings
 
+def banlist_to_discord_file(banlist_file: str, format_name: str):
+	file_name = f"{format_name}.lflist.conf"
+	return File(filename=file_name, fp=banlist_file)
 
 class FormatCommandManager(GenericCommandManager):
 	
-	def __init__(self, bot: ReallyBigYugiohBot, card_collection: CardCollection, banlist_validator: BanlistValidator):
+	def __init__(self, bot: ReallyBigYugiohBot, card_collection: CardCollection):
 		super().__init__(card_collection)
-		self.banlist_validator = banlist_validator
+		self.banlist_validator = BanlistValidator()
 		self.bot = bot
 		self.add_commands()
+
+
 
 	def add_commands(self):		
 
@@ -60,7 +65,7 @@ class FormatCommandManager(GenericCommandManager):
 				await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED, ephemeral=True)
 				return
 
-			channel_name = get_channel_name(interaction.channel)
+			channel_name = self.get_channel_name(interaction.channel)
 			result = self.config.set_default_format_for_channel(format_name, channel_name, server_id)
 			await interaction.response.send_message(result.get_message(), ephemeral=True)
 
@@ -95,7 +100,7 @@ class FormatCommandManager(GenericCommandManager):
 				return
 
 			await interaction.response.defer(ephemeral=True)
-			channel_name = get_channel_name(interaction.channel)
+			channel_name = self.get_channel_name(interaction.channel)
 			forced_format = self.config.get_forced_format(channel_name, server_id)
 			if forced_format is None:
 				await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMAT_TIED)
@@ -174,6 +179,27 @@ class FormatCommandManager(GenericCommandManager):
 					await interaction.followup.send(result.get_message())
 			else:
 				await interaction.response.send_message(result.get_message())
+    
+
+		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_BANLIST, description="Get an EDOPRO banlist")
+		async def get_banlist(interaction: Interaction):
+			server_id = interaction.guild_id
+			result = self.can_command_execute(interaction, False)
+			if result.was_successful():
+				await interaction.response.defer(ephemeral=True)
+				channel_name = self.get_channel_name(interaction.channel)
+				forced_format = self.config.get_forced_format(channel_name, server_id)
+				banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+				if forced_format is None:
+					supported_formats = self.config.get_supported_formats(server_id)
+					if len(supported_formats) > 0:
+						await interaction.followup.send(Strings.ERROR_MESSAGE_NO_DEFAULT_FORMAT)
+					else:
+						await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+				else:
+					await interaction.followup.send(file=banlist_to_discord_file(banlist_file, forced_format))
+			else:
+				await interaction.response.send_message(result.get_message(), ephemeral=True)
 
 		@tie_format_to_channel.autocomplete("format_name")
 		@update_format.autocomplete("format_name")

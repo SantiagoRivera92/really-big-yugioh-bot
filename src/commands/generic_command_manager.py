@@ -5,9 +5,15 @@ from src.config.server_config import ServerConfig
 from src.config.config import Config
 from src.card_collection import CardCollection
 
-from src.utils import get_channel_name, OperationResult
+from src.utils import OperationResult
 
 import src.strings as Strings
+
+
+DM_CHANNEL_KEY = "dm"
+GROUP_CHANNEL_KEY = "group"
+THREAD_CHANNEL_KEY = "thread"
+OTHER_KEY = "other"
 
 class GenericCommandManager:
     
@@ -15,6 +21,18 @@ class GenericCommandManager:
         self.server_config = ServerConfig()
         self.card_collection = card_collection
         self.config = Config(card_collection)
+    
+    def get_channel_name(self, channel:discord.channel):
+        if isinstance(channel, discord.channel.DMChannel):
+            return DM_CHANNEL_KEY
+        elif isinstance(channel, discord.channel.GroupChannel):
+            return GROUP_CHANNEL_KEY
+        elif isinstance(channel, discord.channel.Thread):
+            return THREAD_CHANNEL_KEY
+        elif isinstance(channel, discord.channel.PartialMessageable):
+            return OTHER_KEY
+        else:
+            return channel.name
     
     def can_command_execute(self, interaction: Interaction, admin_only):
         server_id = interaction.guild_id
@@ -25,7 +43,7 @@ class GenericCommandManager:
         role = discord.utils.get(interaction.guild.roles, name="Tournament Staff")
         is_staff = role in interaction.user.roles
 
-        channel_name = get_channel_name(interaction.channel)
+        channel_name = self.get_channel_name(interaction.channel)
         enabled = self.config.is_channel_enabled(channel_name, server_id)
 
         if not enabled:

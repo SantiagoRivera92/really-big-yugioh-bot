@@ -79,6 +79,7 @@ ERROR_MESSAGE_NO_PLAYERS_JOINED_LEAGUE = "There are no players registered for th
 ERROR_MESSAGE_JOIN_LEAGUE_FIRST = "You are not registered in the %s league."
 ERROR_MESSAGE_PLAYER_HASNT_JOINED_LEAGUE = "Player %s is not registered to the league"
 ERROR_MESSAGE_NO_FORMATS_ENABLED = "No formats have been enabled in this server. To add a format, use /add_format"
+ERROR_MESSAGE_NO_DEFAULT_FORMAT = "No default format has been selected for this server or channel. To add a default format to this channel, use /tie_format. To add a default format to the entire server, use /default_format"
 ERROR_MESSAGE_PARTIAL_SEARCH_FAILED = "There are no cards with %s in their name."
 ERROR_MESSAGE_NO_CARDS_WITH_NAME = "%s is not a Yu-Gi-Oh! card."
 ERROR_MESSAGE_NO_ACTIVE_MATCHES_IN_LEAGUE = "There are no active matches in the %s league."
@@ -143,7 +144,7 @@ COMMAND_NAME_HELP = "help" # Done
 
 # Format-related commands
 COMMAND_NAME_FORMAT_ADD = "add_format" # Done
-COMMAND_NAME_FORMAT_TIE = "tie" # Done
+COMMAND_NAME_FORMAT_TIE = "tie_format" # Done
 COMMAND_NAME_FORMAT_DEFAULT = "default_format" # Done
 COMMAND_NAME_FORMAT_CHECK_TIED = "check_tied" # Done
 COMMAND_NAME_FORMAT_BANLIST = "banlist" # Done
