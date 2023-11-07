@@ -5,93 +5,91 @@ from typing import List
 USERNAME_KEY = "discord_name"
 DUELINGBOOK_NAME_KEY = "duelingbook_name"
 
-def userFromJson(user:dict):
-	username = user[USERNAME_KEY]
-	dbname = user[DUELINGBOOK_NAME_KEY]
-	return User(username, dbname)
-
-
+def user_from_json(user:dict):
+	user_name = user[USERNAME_KEY]
+	db_name = user[DUELINGBOOK_NAME_KEY]
+	return User(user_name, db_name)
 
 class User:
-	def __init__(self, username:str, dbname:str):
-		self.username = username
-		self.dbname = dbname
+	def __init__(self, user_name:str, db_name:str):
+		self.user_name = user_name
+		self.db_name = db_name
 
-	def toJson(self):
+	def to_json(self):
 		user = {}
-		user[USERNAME_KEY] = self.username
-		user[DUELINGBOOK_NAME_KEY] = self.dbname
+		user[USERNAME_KEY] = self.user_name
+		user[DUELINGBOOK_NAME_KEY] = self.db_name
 		return user
 
 
 class Users:
 
-	def __init__(self, serverId:int):
-		self.folderName = "json/users/%d" % serverId
-		self.fileName = "json/users/%d/users.json" % serverId
+	def __init__(self, server_id:int):
+		self.folder_name = f"json/users/{server_id}"
+		self.file_name = f"json/users/{server_id}/users.json"
 
 		self.users : List[User] = []
 
-		if not os.path.exists(self.folderName):
-			os.makedirs(self.folderName)
-		if not os.path.exists(self.fileName):
+		if not os.path.exists(self.folder_name):
+			os.makedirs(self.folder_name)
+		if not os.path.exists(self.file_name):
 			self.save()
 		
-		with open(self.fileName) as usersFile:
-			rawUsers = json.load(usersFile)
-			for user in rawUsers:
-				self.users.append(userFromJson(user))
+		with open(self.file_name, encoding="utf-8") as users_file:
+			raw_users = json.load(users_file)
+			for user in raw_users:
+				self.users.append(user_from_json(user))
 
 	def save(self):
-		with open(self.fileName, 'w') as usersFile:
-			json.dump(self.toJson(), usersFile, indent=4)
+		with open(self.file_name, 'w', encoding="utf-8") as users_file:
+			json.dump(self.to_json(), users_file, indent=4)
 
-	def toJson(self):
-		playersAsJson = []
+	def to_json(self):
+		players_as_json = []
 		for player in self.users:
-			playersAsJson.append(player.toJson())
-		return playersAsJson
+			players_as_json.append(player.to_json())
+		return players_as_json
 
-	def getUserFromUsername(self, username:str):
+	def get_user_from_username(self, user_name:str):
 		for user in self.users:
-			if user.username == username:
+			if user.user_name == user_name:
 				return user
 
 		return None
 
-	def setDBUsername(self, username:str, dbName:str):
-		user = self.getUserFromUsername(username)
-		if user != None:
-			user.dbname = dbName
+	def set_db_username(self, user_name:str, db_name:str):
+		user = self.get_user_from_username(user_name)
+		if user is not None:
+			user.db_name = db_name
 		else:
-			user = User(username, dbName)
+			user = User(user_name, db_name)
 			self.users.append(user)
 		self.save()
 
-	def getDBUsername(self, username:str):
-		user = self.getUserFromUsername(username)
-		if user == None:
+	def get_db_username(self, user_name:str):
+		user = self.get_user_from_username(user_name)
+		if user is None:
 			return None
-		return user.dbname
+		return user.db_name
 
-	def getPartialUsernameMatches(self, current:str):
-		partialMatches : List[str] = []
+	def get_partial_username_matches(self, current:str):
+		partial_matches : List[str] = []
 		for user in self.users:
-			if current.lower() in user.username.lower():
-				partialMatches.append(user.username)
-		return partialMatches
+			if current.lower() in user.user_name.lower():
+				partial_matches.append(user.user_name)
+		return partial_matches
 		
 
 class UserManager:
 
-	def __init__(self, serverId:int):
-		self.users = Users(serverId)
+	def __init__(self, server_id:int):
+		self.users = Users(server_id)
 	
-	def getDBUsername(self, username:str):
-		return self.users.getDBUsername(username)
+	def get_db_username(self, user_name:str):
+		return self.users.get_db_username(user_name)
 
-	def setDBUsername(self, username:str, dbName:str):
-		self.users.setDBUsername(username, dbName)
+	def set_db_username(self, user_name:str, db_name:str):
+		self.users.set_db_username(user_name, db_name)
 
-	def getPartialUsernameMatches(self, current:str):
-		return self.users.getPartialUsernameMatches(current)
+	def get_partial_username_matches(self, current:str):
+		return self.users.get_partial_username_matches(current)

@@ -5,13 +5,10 @@ from typing import List
 from discord import Interaction, Attachment, File, Embed, app_commands
 
 from src.commands.generic_command_manager import GenericCommandManager
-from src.card_collection import CardCollection
-from src.utils import ReallyBigYugiohBot
-from src.deck_validation import Deck, DeckValidator, Ydk
-from src.deck_collection import DeckCollectionManager
-from src.deck_images import DeckAsImageGenerator
-from src.cloudinary import Uploader
-from src.credentials_manager import CredentialsManager
+from src.card.card_collection import CardCollection
+from src.utils.utils import ReallyBigYugiohBot
+from src.deck.deck_validation import Deck, Ydk
+from src.deck.deck_collection import DeckCollectionManager
 from src.duelingbook.duelingbook import DuelingbookManager
 
 import src.strings as Strings
@@ -19,12 +16,7 @@ import src.strings as Strings
 
 class DeckCommandManager(GenericCommandManager):
     def __init__(self, bot: ReallyBigYugiohBot, card_collection: CardCollection):
-        super().__init__(card_collection)
-        self.bot = bot
-        self.deck_validator = DeckValidator(card_collection)
-        self.deck_images = DeckAsImageGenerator(card_collection)
-        self.credentials = CredentialsManager()
-        self.uploader = Uploader(self.credentials.getCloudinaryCloudName(), self.credentials.getCloudinaryApiKey(), self.credentials.getCloudinaryApiSecret())
+        super().__init__(bot, card_collection)
         self.add_commands()
 
     def ydk_to_discord_file(self, ydk_file: str, player_name: str):
@@ -100,7 +92,7 @@ class DeckCommandManager(GenericCommandManager):
                 channel_name = self.get_channel_name(interaction.channel)
                 forced_format = self.config.get_forced_format(channel_name, server_id)
                 deck_collection_manager = DeckCollectionManager(forced_format, server_id)
-                players = deck_collection_manager.getRegisteredPlayers()
+                players = deck_collection_manager.get_registered_players()
                 found = False
                 for player in players:
                     if player_name.lower() in player.lower():
@@ -130,7 +122,7 @@ class DeckCommandManager(GenericCommandManager):
                 channel_name = self.get_channel_name(interaction.channel)
                 forced_format = self.config.get_forced_format(channel_name, server_id)
                 deck_collection_manager = DeckCollectionManager(forced_format, server_id)
-                players = deck_collection_manager.getRegisteredPlayers()
+                players = deck_collection_manager.get_registered_players()
                 found = False
                 for player in players:
                     if player_name.lower() in player.lower():
@@ -145,7 +137,7 @@ class DeckCommandManager(GenericCommandManager):
                     deck = deck_file.read()
                     ydk = Ydk(deck)
 
-                    image = self.deck_images.buildImageFromDeck(ydk.get_deck(), player_name, player_name)
+                    image = self.deck_images.build_image_from_deck(ydk.get_deck(), player_name, player_name)
                     image_url = self.uploader.upload_image(image)
 
                     embed = Embed(title=player_name)
@@ -174,7 +166,7 @@ class DeckCommandManager(GenericCommandManager):
                 channel_name = self.get_channel_name(interaction.channel)
                 forced_format = self.config.get_forced_format(channel_name, server_id)
                 deck_collection_manager = DeckCollectionManager(forced_format, server_id)
-                players = deck_collection_manager.getRegisteredPlayers()
+                players = deck_collection_manager.get_registered_players()
                 found = False
                 for player in players:
                     if player_name.lower() in player.lower():
@@ -184,7 +176,7 @@ class DeckCommandManager(GenericCommandManager):
                 if not found:
                     await interaction.followup.send(Strings.ERROR_MESSAGE_NO_SUBMITTED_DECKLIST % player_name)
                     return
-                readable_decklist = deck_collection_manager.getReadableDecklistForPlayer(player_name)
+                readable_decklist = deck_collection_manager.get_readable_decklist_for_player(player_name)
                 readable = self.get_readable_list(readable_decklist)
                 await interaction.followup.send(readable)
             else:
@@ -227,7 +219,7 @@ class DeckCommandManager(GenericCommandManager):
                     ydk_as_string = ydk_as_string.decode("utf-8")
                     ydk_native = Ydk(ydk_as_string)
                     filename = ydk.filename.replace("_", " ")[:-4]
-                    image = self.deck_images.buildImageFromDeck(ydk_native.get_deck(), "temp", filename)
+                    image = self.deck_images.build_image_from_deck(ydk_native.get_deck(), "temp", filename)
                     with open("img/decks/temp.ydk", 'w', encoding="utf-8") as file:
                         deck_as_lines = ydk_as_string.split("\n")
                         for line in deck_as_lines:
@@ -269,7 +261,7 @@ class DeckCommandManager(GenericCommandManager):
                 deck = manager.get_ydk_from_db("temp", db_url)
                 deck_name = manager.get_deck_name_from_db(db_url)
                 ydk = Ydk(deck)
-                image = self.deck_images.buildImageFromDeck(ydk.get_deck(), "temp", deck_name)
+                image = self.deck_images.build_image_from_deck(ydk.get_deck(), "temp", deck_name)
                 image_url = self.uploader.upload_image(image)
 
                 embed = Embed(title=deck_name)
@@ -294,7 +286,7 @@ class DeckCommandManager(GenericCommandManager):
             channel_name = self.get_channel_name(interaction.channel)
             forced_format = self.config.get_forced_format(channel_name, server_id)
             deck_collection_manager = DeckCollectionManager(forced_format, server_id)
-            registered_players = deck_collection_manager.getRegisteredPlayers()
+            registered_players = deck_collection_manager.get_registered_players()
             for player in registered_players:
                 if current.lower() in player.lower():
                     if len(choices) < 25:

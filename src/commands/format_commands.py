@@ -3,9 +3,10 @@ from typing import List
 from discord import Interaction, app_commands, Attachment, File
 
 from src.commands.generic_command_manager import GenericCommandManager
-from src.card_collection import CardCollection
-from src.utils import ReallyBigYugiohBot
-from src.banlist_validation import BanlistValidator
+from src.card.card_collection import CardCollection
+from src.utils.utils import ReallyBigYugiohBot
+
+import src.banlist.banlist_utils as Banlist
 
 import src.strings as Strings
 
@@ -16,9 +17,7 @@ def banlist_to_discord_file(banlist_file: str, format_name: str):
 class FormatCommandManager(GenericCommandManager):
 	
 	def __init__(self, bot: ReallyBigYugiohBot, card_collection: CardCollection):
-		super().__init__(card_collection)
-		self.banlist_validator = BanlistValidator()
-		self.bot = bot
+		super().__init__(bot, card_collection)
 		self.add_commands()
 
 
@@ -42,7 +41,7 @@ class FormatCommandManager(GenericCommandManager):
 			if lflist.filename.endswith(".lflist.conf"):
 				file_content = await lflist.read()
 				decoded_file_content = file_content.decode("utf-8")
-				result = self.banlist_validator.validateBanlist(decoded_file_content)
+				result = Banlist.validate_banlist(decoded_file_content)
 				if not result.was_successful():
 					await interaction.followup.send(result.get_message())
 					return
@@ -134,7 +133,7 @@ class FormatCommandManager(GenericCommandManager):
 				if lflist.filename.endswith(".lflist.conf"):
 					file_content = await lflist.read()
 					decodedfile_content = file_content.decode("utf-8")
-					result = self.banlist_validator.validateBanlist(decodedfile_content)
+					result = Banlist.validate_banlist(decodedfile_content)
 					if result.was_successful():
 						result = self.config.edit_supported_format(format_name, decodedfile_content, server_id)
 						if result.was_successful():

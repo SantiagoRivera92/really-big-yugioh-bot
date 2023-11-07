@@ -1,7 +1,7 @@
 from typing import List
 import json
 
-from src.utils import OperationResult
+from src.utils.utils import OperationResult
 import src.strings as Strings
 
 

@@ -3,9 +3,13 @@ import discord
 
 from src.config.server_config import ServerConfig
 from src.config.config import Config
-from src.card_collection import CardCollection
+from src.card.card_collection import CardCollection
+from src.deck.deck_validation import DeckValidator
+from src.credentials_manager import CredentialsManager
+from src.deck.deck_images import DeckAsImageGenerator
+from src.image_uploader import Uploader
 
-from src.utils import OperationResult
+from src.utils.utils import OperationResult, ReallyBigYugiohBot
 
 import src.strings as Strings
 
@@ -17,22 +21,26 @@ OTHER_KEY = "other"
 
 class GenericCommandManager:
     
-    def __init__(self, card_collection:CardCollection):
+    def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
         self.server_config = ServerConfig()
+        self.bot = bot
         self.card_collection = card_collection
-        self.config = Config(card_collection)
+        self.config = Config()
+        self.deck_validator = DeckValidator(card_collection)
+        self.credentials = CredentialsManager()
+        self.deck_images = DeckAsImageGenerator(card_collection)
+        self.uploader = Uploader(self.credentials.get_cloudinary_cloud_name(), self.credentials.get_cloudinary_key(), self.credentials.get_cloudinary_secret())
     
     def get_channel_name(self, channel:discord.channel):
         if isinstance(channel, discord.channel.DMChannel):
             return DM_CHANNEL_KEY
-        elif isinstance(channel, discord.channel.GroupChannel):
+        if isinstance(channel, discord.channel.GroupChannel):
             return GROUP_CHANNEL_KEY
-        elif isinstance(channel, discord.channel.Thread):
+        if isinstance(channel, discord.channel.Thread):
             return THREAD_CHANNEL_KEY
-        elif isinstance(channel, discord.channel.PartialMessageable):
+        if isinstance(channel, discord.channel.PartialMessageable):
             return OTHER_KEY
-        else:
-            return channel.name
+        return channel.name
     
     def can_command_execute(self, interaction: Interaction, admin_only):
         server_id = interaction.guild_id

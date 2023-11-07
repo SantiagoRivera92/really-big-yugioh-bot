@@ -1,5 +1,5 @@
 import json
-from src.utils import OperationResult
+from src.utils.utils import OperationResult
 import src.strings as Strings
 
 class ServerConfig:
@@ -15,7 +15,7 @@ class ServerConfig:
         
         return OperationResult(False, Strings.ERROR_PAY_ME_MONEY % server_id)
     
-    def getEnabledServers(self):
+    def get_enabled_servers(self):
         with open(self.filename, encoding="utf-8") as server_list:
             server_list = json.load(server_list)
         return server_list

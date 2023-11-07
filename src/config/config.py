@@ -1,9 +1,9 @@
 import json
 import os
 from typing import List, Union
-from src.banlist_generation import BanlistConverter
-from src.utils import OperationResult
+from src.utils.utils import OperationResult
 import src.strings as Strings
+import src.banlist.banlist_utils as Banlist
 
 SUPPORTED_FORMATS_KEY = "supported_formats"
 SANITIZED_NAMES_KEY = "sanitized_format_names"
@@ -30,11 +30,8 @@ DEFAULT_CONFIG_FILE_NAME = "./json/default.json"
 
 class Config:
 
-    def __init__(self, card_collection):
-        self.banlist_generator = BanlistConverter(card_collection)
-
     def change_status(self, format_name, server_id, card_id, card_name, status):
-        return self.banlist_generator.fixBanlist(format_name, server_id, card_id, card_name, status)
+        return Banlist.fix_banlist(format_name, server_id, card_id, card_name, status)
 
     def get_config_for_server(self, server_id):
         server_filename = FILE_NAME % server_id
@@ -76,7 +73,7 @@ class Config:
             if _format.lower() == format_name.lower():
                 return OperationResult( False, Strings.ERROR_CONFIG_FORMAT_ALREADY_EXISTS % format_name)
 
-        result = self.banlist_generator.writeBanlist(
+        result = Banlist.write_banlist(
             format_name, lflist_file, server_id
         )
         if result.was_successful():
@@ -106,7 +103,7 @@ class Config:
         if not found:
             return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % format_name)
 
-        result = self.banlist_generator.writeBanlist(
+        result = Banlist.write_banlist(
             forced_format, lflist_file, server_id
         )
         return result
@@ -143,7 +140,7 @@ class Config:
         config[BANLIST_FILES_KEY] = new_banlist_files
         config[SUPPORTED_FORMATS_KEY] = supported_formats
         config[CHANNEL_CONFIG_KEY] = new_channel_config
-        self.banlist_generator.deleteBanlist(forced_format, server_id)
+        Banlist.delete_banlist(forced_format, server_id)
         self.save_config_for_server(config, server_id)
         return OperationResult(True, "")
 

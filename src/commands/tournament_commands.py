@@ -5,30 +5,20 @@ from typing import List
 from discord import Interaction, Attachment, app_commands, File, Embed
 
 from src.commands.generic_command_manager import GenericCommandManager
-from src.tournaments import TournamentManager
-from src.credentials_manager import CredentialsManager
-from src.utils import ReallyBigYugiohBot, OperationResult
-from src.card_collection import CardCollection
-from src.deck_collection import DeckCollectionManager
-from src.deck_validation import DeckValidator, Ydk
+from src.tournament.tournaments import TournamentManager
+from src.utils.utils import ReallyBigYugiohBot, OperationResult
+from src.card.card_collection import CardCollection
+from src.deck.deck_validation import Ydk
+from src.deck.deck_collection import DeckCollectionManager
 from src.user_manager import UserManager
 from src.league.matchmaking import MatchmakingManager
 from src.duelingbook.duelingbook import DuelingbookManager
-from src.deck_images import DeckAsImageGenerator
-from src.cloudinary import Uploader
 
 import src.strings as Strings
-
-
 class TournamentCommandManager(GenericCommandManager):
 
     def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
-        super().__init__(card_collection)
-        self.bot = bot
-        self.deck_validator = DeckValidator(card_collection)
-        self.credentials = CredentialsManager()
-        self.deck_images = DeckAsImageGenerator(card_collection)
-        self.uploader = Uploader(self.credentials.getCloudinaryCloudName(), self.credentials.getCloudinaryApiKey(), self.credentials.getCloudinaryApiSecret())
+        super().__init__(bot, card_collection)
         self.add_commands()
         
     def get_tournament_manager(self, interaction: Interaction):
@@ -67,10 +57,10 @@ class TournamentCommandManager(GenericCommandManager):
 
             deck_collection_manager = DeckCollectionManager(format_name, server_id)
 
-            deck_collection_manager.beginCollection()
+            deck_collection_manager.begin_collection()
             
             manager = self.get_tournament_manager(interaction)
-            result = manager.createTournament(
+            result = manager.create_tournament(
                 tournament_name, format_name, tournament_type)
             await interaction.followup.send(result.get_message())
 
@@ -84,10 +74,10 @@ class TournamentCommandManager(GenericCommandManager):
             await interaction.response.defer(ephemeral=False)
 
             manager = self.get_tournament_manager(interaction)
-            format_name = manager.getTournamentFormat()
-            DeckCollectionManager(format_name, server_id).endCollection()
+            format_name = manager.get_tournament_format()
+            DeckCollectionManager(format_name, server_id).end_collection()
 
-            await interaction.followup.send(manager.startTournament().get_message())
+            await interaction.followup.send(manager.start_tournament().get_message())
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_END, description="Ends the tournament.")
         async def end_tournament(interaction: Interaction):
@@ -99,7 +89,7 @@ class TournamentCommandManager(GenericCommandManager):
 
             manager = self.get_tournament_manager(interaction)
 
-            await interaction.followup.send(manager.endTournament().get_message())
+            await interaction.followup.send(manager.end_tournament().get_message())
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_INFO, description="Gets the tournament url")
         async def tournament_info(interaction: Interaction):
@@ -111,7 +101,7 @@ class TournamentCommandManager(GenericCommandManager):
 
             manager = self.get_tournament_manager(interaction)
 
-            await interaction.followup.send(manager.getTournamentInfo().get_message())
+            await interaction.followup.send(manager.get_tournament_info().get_message())
 
         def register_list(interaction: Interaction, _format: str, decklist:str):
             server_id = interaction.guild_id
@@ -123,7 +113,7 @@ class TournamentCommandManager(GenericCommandManager):
                 result = self.deck_validator.validate_deck(decklist, banlist_file)
                 if result.was_successful():
                     deck_collection_manager = DeckCollectionManager(_format, server_id)
-                    result = deck_collection_manager.addDeck(player_name, decklist)
+                    result = deck_collection_manager.add_deck(player_name, decklist)
                     if result.was_successful():
                         path = deck_collection_manager.get_decklist_for_player(player_name)
                 else:
@@ -134,7 +124,7 @@ class TournamentCommandManager(GenericCommandManager):
             # At this point, decklist is updated.
 
             if path is not None:
-                return self.get_tournament_manager(interaction).registerToTournament(player_name, player_id, path)
+                return self.get_tournament_manager(interaction).register_to_tournament(player_name, player_id, path)
             
             print(f"{player_name}'s decklist path is None.")
             return OperationResult(False, "Something went wrong while registering your list. Please contact Diamond Dude or try again.")
@@ -149,7 +139,7 @@ class TournamentCommandManager(GenericCommandManager):
             await interaction.response.defer(ephemeral=True)
 
             manager = self.get_tournament_manager(interaction)
-            forced_format = manager.getTournamentFormat()
+            forced_format = manager.get_tournament_format()
             if forced_format is None:
                 await interaction.followup.send("There is no ongoing tournament in this server")
                 return
@@ -173,7 +163,7 @@ class TournamentCommandManager(GenericCommandManager):
             await interaction.response.defer(ephemeral=True)
 
             manager = self.get_tournament_manager(interaction)
-            forced_format = manager.getTournamentFormat()
+            forced_format = manager.get_tournament_format()
             if forced_format is None:
                 await interaction.followup.send("There is no ongoing tournament in this server")
                 return
@@ -203,7 +193,7 @@ class TournamentCommandManager(GenericCommandManager):
             
             manager = UserManager(interaction.guild_id)
             player_name = interaction.user.name
-            manager.setDBUsername(player_name, db_name)
+            manager.set_db_username(player_name, db_name)
             await interaction.followup.send(f"Duelingbook username set successfully to {db_name}")
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_GET_DB_NAME, description="Gets the Duelinbgook username for an user.")
@@ -215,7 +205,7 @@ class TournamentCommandManager(GenericCommandManager):
             
             await interaction.response.defer(ephemeral=True)
             manager = UserManager(interaction.guild_id)
-            db_name = manager.getDBUsername(player_name)
+            db_name = manager.get_db_username(player_name)
             if db_name is None:
                 await interaction.followup.send(f"{player_name} does not have a Duelingbook username set")
                 return
@@ -238,7 +228,7 @@ class TournamentCommandManager(GenericCommandManager):
 
             matchmaking_manager = MatchmakingManager(forced_format, server_id)
 
-            t_winner = manager.getWinnerFromLoser(player_name)
+            t_winner = manager.get_winner_from_loser(player_name)
 
             if t_winner is not None:
                 winner = matchmaking_manager.get_player_for_id(t_winner.discordId)
@@ -250,7 +240,7 @@ class TournamentCommandManager(GenericCommandManager):
                 matchmaking_manager.create_match(t_winner.discordId, interaction.user.id, True)
                 matchmaking_manager.end_match(t_winner.discordId)
 
-            result = manager.reportLoss(player_name)
+            result = manager.report_loss(player_name)
             await interaction.followup.send(result.get_message())
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_FORCE_LOSS, description="Forces a player to lose a match")
@@ -265,7 +255,7 @@ class TournamentCommandManager(GenericCommandManager):
             channel_name = self.get_channel_name(interaction.channel)
             forced_format = self.config.get_forced_format(channel_name, server_id)
             matchmaking_manager = MatchmakingManager(forced_format, server_id)
-            t_winner = manager.getWinnerFromLoser(player_name)
+            t_winner = manager.get_winner_from_loser(player_name)
             if t_winner is not None:
                 winner = matchmaking_manager.get_player_for_id(t_winner.discordId)
                 loser = matchmaking_manager.get_player_for_id(interaction.user.id)
@@ -275,14 +265,14 @@ class TournamentCommandManager(GenericCommandManager):
                     matchmaking_manager.register_player(interaction.user.id, player_name)
                 matchmaking_manager.create_match(t_winner.discordId, interaction.user.id, True)
                 matchmaking_manager.end_match(t_winner.discordId)
-            result = manager.reportLoss(player_name)
+            result = manager.report_loss(player_name)
             await interaction.followup.send(result.get_message())
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_DROP, description="Drop from the tournament")
         async def drop(interaction: Interaction):
             drop_enabled = False
             if not drop_enabled and interaction.guild_id == 459826576536764426:
-                await interaction.response.send_message("Manual dropping is currently disabled. Please ask Tournament Staff to drop you.")
+                await interaction.response.send_message("Manual dropping is currently disabled. Please ask _tournament Staff to drop you.")
                 return
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
@@ -316,7 +306,7 @@ class TournamentCommandManager(GenericCommandManager):
             await interaction.response.defer(ephemeral=False)
             server_id = interaction.guild_id
             manager = TournamentManager(self.credentials, server_id)
-            result = manager.getReadableActiveMatches()
+            result = manager.get_readable_active_matches()
             await interaction.followup.send(result.get_message())
             
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CONFIRM_DECK, description="Shows the deck you have currently registered")
@@ -333,7 +323,7 @@ class TournamentCommandManager(GenericCommandManager):
                 channel_name = self.get_channel_name(interaction.channel)
                 forced_format = self.config.get_forced_format(channel_name, server_id)
                 deck_collection_manager = DeckCollectionManager(forced_format, server_id)
-                players = deck_collection_manager.getRegisteredPlayers()
+                players = deck_collection_manager.get_registered_players()
                 found = False
                 for player in players:
                     if player_name.lower() in player.lower():
@@ -348,7 +338,7 @@ class TournamentCommandManager(GenericCommandManager):
                     deck = deck_file.read()
                     ydk = Ydk(deck)
 
-                    image = self.deck_images.buildImageFromDeck(ydk.get_deck(), player_name, player_name)
+                    image = self.deck_images.build_image_from_deck(ydk.get_deck(), player_name, player_name)
                     image_url = self.uploader.upload_image(image)
 
                     embed = Embed(title=player_name)
@@ -376,8 +366,8 @@ class TournamentCommandManager(GenericCommandManager):
 
             await interaction.response.defer(ephemeral=True)
             manager = TournamentManager(self.credentials, server_id)
-            players = manager.getTournamentPlayers()
-            challonge_players = manager.getChallongePlayers()
+            players = manager.get_tournament_players()
+            challonge_players = manager.get_challonge_players()
             unsynced = []
             for challonge_player in challonge_players:
                 unsynced.append(challonge_player)
@@ -420,7 +410,7 @@ class TournamentCommandManager(GenericCommandManager):
         async def player_autocomplete_for_tournament(interaction: Interaction, current: str) -> list[app_commands.Choice[str]]:
             choices: List[app_commands.Choice[str]] = []
             manager = TournamentManager(self.credentials, interaction.guild_id)
-            players = manager.getTournamentPlayers()
+            players = manager.get_tournament_players()
             for player in players:
                 if current.lower() in player.username.lower():
                     if len(choices) < 25:
@@ -433,7 +423,7 @@ class TournamentCommandManager(GenericCommandManager):
         async def player_autocomplete_for_db(interaction: Interaction, current: str) -> list[app_commands.Choice[str]]:
             choices: List[app_commands.Choice[str]] = []
             manager = UserManager(interaction.guild_id)
-            players = manager.getPartialUsernameMatches(current)
+            players = manager.get_partial_username_matches(current)
             for player in players:
                 if len(choices) < 25:
                     choice = app_commands.Choice(name=player, value=player)
@@ -451,4 +441,3 @@ class TournamentCommandManager(GenericCommandManager):
                         choice = app_commands.Choice(name=_format, value=_format)
                         choices.append(choice)
             return choices
-        

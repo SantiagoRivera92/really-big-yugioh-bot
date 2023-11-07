@@ -4,18 +4,16 @@ from discord import Interaction, app_commands
 
 from src.commands.generic_command_manager import GenericCommandManager
 
-from src.card_collection import CardCollection
+from src.card.card_collection import CardCollection
 from src.league.matchmaking import MatchmakingManager
-from src.utils import ReallyBigYugiohBot
+from src.utils.utils import ReallyBigYugiohBot
 
 import src.strings as Strings
 
 class LeagueCommandManager(GenericCommandManager):
     
     def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
-        super().__init__(card_collection)
-        self.bot = bot
-        
+        super().__init__(bot, card_collection)
         self.add_commands()
         
         

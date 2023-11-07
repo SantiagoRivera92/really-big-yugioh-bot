@@ -4,9 +4,9 @@ from typing import List
 from discord import app_commands
 from discord import Interaction
 
-from src.utils import ReallyBigYugiohBot
-from src.card_collection import CardCollection
-from src.card_embeds import cardToEmbed
+from src.utils.utils import ReallyBigYugiohBot
+from src.card.card_collection import CardCollection
+from src.card.card_embeds import card_to_embed
 
 from src.commands.generic_command_manager import GenericCommandManager
 
@@ -15,8 +15,7 @@ import src.strings as Strings
 class CardCommandManager(GenericCommandManager):
 
     def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
-        super().__init__(card_collection)
-        self.bot = bot
+        super().__init__(bot, card_collection)
         self.add_commands()
 
     def add_commands(self):
@@ -40,7 +39,7 @@ class CardCommandManager(GenericCommandManager):
             else:
                 if forced_format is not None:
                     banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
-                    embed = cardToEmbed(card, banlist_file, forced_format, self.bot)
+                    embed = card_to_embed(card, banlist_file, forced_format, self.bot)
                     await interaction.followup.send(embed=embed)
                 else:
                     await interaction.followup.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)

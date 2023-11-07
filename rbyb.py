@@ -12,11 +12,11 @@ from typing import List
 
 from src.league.matchmaking import MatchmakingManager
 from src.command_manager import CommandManager
-from src.utils import ReallyBigYugiohBot
+from src.utils.utils import ReallyBigYugiohBot
 from src.credentials_manager import CredentialsManager
 from src.config.config import Config
 from src.config.server_config import ServerConfig
-from src.card_collection import CardCollection
+from src.card.card_collection import CardCollection
 
 decay: bool = False
 
@@ -28,7 +28,7 @@ commandManager = CommandManager(bot, card_collection)
 
 
 def start_bot():
-	bot.run(CredentialsManager().getDiscordAPIKey())
+	bot.run(CredentialsManager().get_discord_key())
 
 @bot.event
 async def on_ready():
@@ -39,7 +39,7 @@ async def on_ready():
 async def decay_scores():
 	global decay
 	if decay:
-		servers: List[int] = ServerConfig().getEnabledServers()
+		servers: List[int] = ServerConfig().get_enabled_servers()
 		for server_id in servers:
 			# Get list of formats for that server
 			formats = Config(card_collection).get_supported_formats(server_id)

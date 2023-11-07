@@ -2,7 +2,7 @@ import json
 import os
 import time
 from typing import List, Union
-from src.utils import OperationResult
+from src.utils.utils import OperationResult
 from src.league.elo import Elo
 import src.strings as Strings
 

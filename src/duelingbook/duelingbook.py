@@ -1,7 +1,7 @@
 import urllib
 import json
 from urllib import parse
-from src.utils import OperationResult
+from src.utils.utils import OperationResult
 
 DB_URL = "https://www.duelingbook.com/php-scripts/load-deck.php?id=%s&app=FormatLibrary"
 

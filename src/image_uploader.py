@@ -1,7 +1,9 @@
+import time
+
+import cloudinary
+
 from cloudinary.uploader import upload
 from cloudinary.utils import cloudinary_url
-import cloudinary
-import time
 
 
 class Uploader:
@@ -15,10 +17,10 @@ class Uploader:
 		)
 					
 	def upload_image(self, image_url:str):
-		public_id = self.generatePublicId()
+		public_id = self.generate_public_id()
 		upload(image_url, public_id=public_id)
 		url, options = cloudinary_url(public_id)
 		return url
 
-	def generatePublicId(self):
+	def generate_public_id(self):
 		return "rbyb" + str(int(round(time.time() * 1000)))
