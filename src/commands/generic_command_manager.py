@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from discord import Interaction
 import discord
 
@@ -19,7 +21,7 @@ GROUP_CHANNEL_KEY = "group"
 THREAD_CHANNEL_KEY = "thread"
 OTHER_KEY = "other"
 
-class GenericCommandManager:
+class GenericCommandManager(ABC):
     
     def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
         self.server_config = ServerConfig()
@@ -77,3 +79,8 @@ class GenericCommandManager:
         if filename == "Advanced":
             return OperationResult(False, Strings.ERROR_FORMAT_NAME_ADVANCED)
         return OperationResult(True, "")
+    
+    
+    @abstractmethod
+    def add_commands(self):
+        pass

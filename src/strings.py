@@ -80,13 +80,11 @@ ERROR_MESSAGE_JOIN_LEAGUE_FIRST = "You are not registered in the %s league."
 ERROR_MESSAGE_PLAYER_HASNT_JOINED_LEAGUE = "Player %s is not registered to the league"
 ERROR_MESSAGE_NO_FORMATS_ENABLED = "No formats have been enabled in this server. To add a format, use /add_format"
 ERROR_MESSAGE_NO_DEFAULT_FORMAT = "No default format has been selected for this server or channel. To add a default format to this channel, use /tie_format. To add a default format to the entire server, use /default_format"
-ERROR_MESSAGE_PARTIAL_SEARCH_FAILED = "There are no cards with %s in their name."
 ERROR_MESSAGE_NO_CARDS_WITH_NAME = "%s is not a Yu-Gi-Oh! card."
 ERROR_MESSAGE_NO_ACTIVE_MATCHES_IN_LEAGUE = "There are no active matches in the %s league."
 ERROR_MESSAGE_PLAYER_HAS_NO_MATCHES_PENDING = "Player %s has no pending active matches."
 ERROR_MESSAGE_BOT_DISABLED_IN_CHANNEL = "The bot is disabled in this channel!"
 ERROR_MESSAGE_NOT_AN_ADMIN = "This command requires admin privileges."
-ERROR_MESSAGE_TOO_MANY_RESULTS = "More than 20 cards contain %s. Please be more specific."
 ERROR_MESSAGE_WRONG_BANLIST_FORMAT = "The only supported banlist format is a .lflist.conf file."
 ERROR_MESSAGE_WRONG_DECK_FORMAT = "Only .ydk files can be validated."
 ERROR_MESSAGE_NO_FORMAT_FOR_NAME = "There's no format named %s. You can get a list of all installed formats with /formats."
@@ -107,18 +105,11 @@ ERROR_MESSAGE_PLAYER_ALREADY_JOINED = "You had already joined the tournament. Yo
 
 BOT_MESSAGE_SOMEONE_JOINED_THE_QUEUE = "Someone entered the %s format ranked queue."
 BOT_MESSAGE_YOUR_RATING_IS = "Your current rating in the %s league is %.2f"
-BOT_MESSAGE_FORMAT_LIST = "These are all the supported formats in this server:\n%s"
-BOT_MESSAGE_CHOOSE_A_FORMAT = "Select a format."
-BOT_MESSAGE_CHOOSE_A_CARD = "Select a card."
 BOT_MESSAGE_ACTIVE_MATCH_LIST = "This is a list of all active matches in the %s league:\n%s"
-BOT_MESSAGE_CHOOSE_A_FORMAT_TO_DISPLAY_BANLIST_STATUS = "Please choose a format to display banlist status."
-BOT_MESSAGE_MULTIPLE_RESULTS_AVAILABLE = "Multiple results available. Please pick one."
 BOT_MESSAGE_FORMAT_ADDED = "Your format was added to the bot."
 BOT_MESSAGE_FORMAT_UPDATED = "Your format was updated."
 BOT_MESSAGE_FORMAT_REMOVED = "Format %s has been removed from the bot."
 BOT_MESSAGE_FORMAT_TIED = "%s is now the default format for channel %s."
-BOT_MESSAGE_CHOOSE_A_FORMAT_TO_DOWNLOAD_BANLIST = "Please choose a format to download its banlist."
-BOT_MESSAGE_CHOOSE_FORMAT_TO_VALIDATE_DECK = "Please choose a format to validate your deck."
 BOT_MESSAGE_CHANNEL_IS_TIED_TO_FORMAT = "Channel %s is tied to a format: %s"
 BOT_MESSAGE_DECK_VALID = "Your deck is valid in %s."
 BOT_MESSAGE_JOINED_TOURNAMENT = "You have registered to the tournament! Confirm your decklist by using /confirm_deck"
@@ -127,7 +118,6 @@ BOT_MESSAGE_UNREGISTERED = "%s has unregistered from the tournament."
 BOT_MESSAGE_TOURNAMENT_CREATED = "Your tournament \"%s\" was created! You can find it at %s"
 BOT_MESSAGE_TOURNAMENT_STARTED = "Tournament has started! You can check round 1 at %s"
 BOT_MESSAGE_TOURNAMENT_ENDED =  "Tournament has finished! You can see the standings in %s"
-BOT_MESSAGE_DECKLIST_SUBMITTED = "Your decklist was submitted!"
 BOT_MESSAGE_LOSS_REGISTERED = "<@%d> lost to <@%d>."
 BOT_MESSAGE_NEW_MATCH = "<@%d> vs <@%d>"
 
@@ -139,21 +129,15 @@ BOT_MESSAGE_ACTIVE_MATCH_FORMAT = "%s (%.2f) vs %s (%.2f)"
 # Card command
 COMMAND_NAME_CARD = "card"
 
-# Help command
-COMMAND_NAME_HELP = "help" # Done
-
 # Format-related commands
 COMMAND_NAME_FORMAT_ADD = "add_format" # Done
 COMMAND_NAME_FORMAT_TIE = "tie_format" # Done
 COMMAND_NAME_FORMAT_DEFAULT = "default_format" # Done
 COMMAND_NAME_FORMAT_CHECK_TIED = "check_tied" # Done
 COMMAND_NAME_FORMAT_BANLIST = "banlist" # Done
-COMMAND_NAME_FORMAT_LIST = "formats" # Done
 COMMAND_NAME_FORMAT_UPDATE = "update_format" # Done
 COMMAND_NAME_FORMAT_REMOVE = "remove_format" # Done
 COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS = "change_card_status" # Done
-COMMAND_NAME_FORMAT_ADD_ADVANCED = "add_advanced" # Done
-COMMAND_NAME_FORMAT_ADD_TIME_WIZARD = "add_timewizard" # In development
 
 # Deck-related commands
 COMMAND_NAME_DECK_VALIDATE = "validate" # Done
@@ -177,25 +161,20 @@ COMMAND_NAME_TOURNAMENT_REPORT_LOSS = "t_loss" # Done
 COMMAND_NAME_TOURNAMENT_FORCE_LOSS = "t_force_loss" # Done
 COMMAND_NAME_TOURNAMENT_JOIN_DB = "t_join_db" # Done
 COMMAND_NAME_TOURNAMENT_JOIN_YDK = "t_join_ydk" # Done
-COMMAND_NAME_TOURNAMENT_INVITE = "t_invite" # In development
 COMMAND_NAME_TOURNAMENT_DROP = "t_drop" # Done
 COMMAND_NAME_TOURNAMENT_DQ = "t_dq" # Done
 COMMAND_NAME_TOURNAMENT_START = "t_start" # Done
 COMMAND_NAME_TOURNAMENT_END = "t_end" # Done
-COMMAND_NAME_TOURNAMENT_PRINT_STANDINGS = "t_standings" # In development
 COMMAND_NAME_TOURNAMENT_PRINT_ACTIVE_MATCHES = "t_matches" # In development
 COMMAND_NAME_TOURNAMENT_TXT_DECK = "txt_deck" # Done
 COMMAND_NAME_TOURNAMENT_YDK_DECK = "ydk_deck" # Done
 COMMAND_NAME_TOURNAMENT_IMG_DECK = "img_deck" # Done
-COMMAND_NAME_TOURNAMENT_GET_ALL_LISTS = "download_decks" # Done
-COMMAND_NAME_TOURNAMENT_GET_ALL_DECK_IMGS = "download_img_decks"
 COMMAND_NAME_TOURNAMENT_CONFIRM_DECK = "confirm_deck" # Done
 COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE = "t_challonge_cleanup" # Done
 COMMAND_NAME_SHARE_DECK_DB = "share_deck_image_db" #Done
 
 COMMAND_NAME_SHARE_DECK_DB = "share_deck_db" #Done
 COMMAND_NAME_SHARE_DECK_YDK = "share_deck" #Done
-COMMAND_NAME_SHARE_DECK_DB_TXT = "share_deck_db_txt" # Done
 COMMAND_NAME_SHARE_DECK_YDK_TXT = "share_deck_txt" # Done
 
 COMMAND_NAME_SET_DB_NAME = "set_db_name" # Done

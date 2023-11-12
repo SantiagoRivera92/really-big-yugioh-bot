@@ -196,7 +196,7 @@ class DeckValidator:
 		error_messages = []
 		copies = ydk.get_copies()
 		for card in copies:
-			card_name = self.card_collection.getCardNameFromId(card.card_id)
+			card_name = self.card_collection.get_card_name_from_id(card.card_id)
 			found = False
 			for line in banlist_as_lines:
 				if card.card_id in line:

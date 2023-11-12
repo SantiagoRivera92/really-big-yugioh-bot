@@ -5,8 +5,6 @@ from typing import List
 from discord import Interaction, Attachment, File, Embed, app_commands
 
 from src.commands.generic_command_manager import GenericCommandManager
-from src.card.card_collection import CardCollection
-from src.utils.utils import ReallyBigYugiohBot
 from src.deck.deck_validation import Deck, Ydk
 from src.deck.deck_collection import DeckCollectionManager
 from src.duelingbook.duelingbook import DuelingbookManager
@@ -15,9 +13,6 @@ import src.strings as Strings
 
 
 class DeckCommandManager(GenericCommandManager):
-    def __init__(self, bot: ReallyBigYugiohBot, card_collection: CardCollection):
-        super().__init__(bot, card_collection)
-        self.add_commands()
 
     def ydk_to_discord_file(self, ydk_file: str, player_name: str):
         file_name = f"{player_name}.ydk"
@@ -35,15 +30,15 @@ class DeckCommandManager(GenericCommandManager):
     def get_readable_list(self, readable_decklist: Deck) -> str:
         readable = "Main deck:\n\n"
         for card in readable_decklist.main:
-            card_name = self.card_collection.getCardNameFromId(card.card_id)
+            card_name = self.card_collection.get_card_name_from_id(card.card_id)
             readable = f"{readable}{card.copies}x {card_name}\n"
             readable = f"{readable}\nExtra Deck:\n\n"
         for card in readable_decklist.extra:
-            card_name = self.card_collection.getCardNameFromId(card.card_id)
+            card_name = self.card_collection.get_card_name_from_id(card.card_id)
             readable = f"{readable}{card.copies}x {card_name}\n"
         readable = f"{readable}\nSide Deck:\n\n"
         for card in readable_decklist.side:
-            card_name = self.card_collection.getCardNameFromId(card.card_id)
+            card_name = self.card_collection.get_card_name_from_id(card.card_id)
             readable = f"{readable}{card.copies}x {card_name}\n"
         return readable
 

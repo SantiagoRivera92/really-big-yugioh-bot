@@ -6,8 +6,7 @@ from discord import Interaction, Attachment, app_commands, File, Embed
 
 from src.commands.generic_command_manager import GenericCommandManager
 from src.tournament.tournaments import TournamentManager
-from src.utils.utils import ReallyBigYugiohBot, OperationResult
-from src.card.card_collection import CardCollection
+from src.utils.utils import OperationResult
 from src.deck.deck_validation import Ydk
 from src.deck.deck_collection import DeckCollectionManager
 from src.user_manager import UserManager
@@ -16,10 +15,6 @@ from src.duelingbook.duelingbook import DuelingbookManager
 
 import src.strings as Strings
 class TournamentCommandManager(GenericCommandManager):
-
-    def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
-        super().__init__(bot, card_collection)
-        self.add_commands()
         
     def get_tournament_manager(self, interaction: Interaction):
         server_id = interaction.guild_id
@@ -60,8 +55,7 @@ class TournamentCommandManager(GenericCommandManager):
             deck_collection_manager.begin_collection()
             
             manager = self.get_tournament_manager(interaction)
-            result = manager.create_tournament(
-                tournament_name, format_name, tournament_type)
+            result = manager.create_tournament(tournament_name, format_name, tournament_type)
             await interaction.followup.send(result.get_message())
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_START, description="Starts the tournament.")
@@ -177,7 +171,7 @@ class TournamentCommandManager(GenericCommandManager):
 
             deck = manager.get_ydk_from_db(player_name, duelingbook_link)
             
-            await interaction.followup.send(register_list(interaction, forced_format, deck).getMessage())
+            await interaction.followup.send(register_list(interaction, forced_format, deck).get_message())
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SET_DB_NAME, description="Sets your Duelingbook name for a tournament")
         async def set_db_name(interaction:Interaction, db_name:str):
@@ -221,7 +215,7 @@ class TournamentCommandManager(GenericCommandManager):
             server_id = interaction.guild_id
             player_name = interaction.user.name
 
-            manager = TournamentManager(self.credentials, server_id)
+            manager = self.get_tournament_manager(interaction)
 
             channel_name = self.get_channel_name(interaction.channel)
             forced_format = self.config.get_forced_format(channel_name, server_id)
@@ -231,14 +225,14 @@ class TournamentCommandManager(GenericCommandManager):
             t_winner = manager.get_winner_from_loser(player_name)
 
             if t_winner is not None:
-                winner = matchmaking_manager.get_player_for_id(t_winner.discordId)
+                winner = matchmaking_manager.get_player_for_id(t_winner.discord_id)
                 loser = matchmaking_manager.get_player_for_id(interaction.user.id)
                 if winner is None:
-                    matchmaking_manager.register_player(t_winner.discordId, t_winner.username)
+                    matchmaking_manager.register_player(t_winner.discord_id, t_winner.username)
                 if loser is None:
                     matchmaking_manager.register_player(interaction.user.id, player_name)
-                matchmaking_manager.create_match(t_winner.discordId, interaction.user.id, True)
-                matchmaking_manager.end_match(t_winner.discordId)
+                matchmaking_manager.create_match(t_winner.discord_id, interaction.user.id, True)
+                matchmaking_manager.end_match(t_winner.discord_id)
 
             result = manager.report_loss(player_name)
             await interaction.followup.send(result.get_message())
@@ -251,20 +245,20 @@ class TournamentCommandManager(GenericCommandManager):
                 return
             await interaction.response.defer(ephemeral=False)
             server_id = interaction.guild_id
-            manager = TournamentManager(self.credentials, server_id)
+            manager = self.get_tournament_manager(interaction)
             channel_name = self.get_channel_name(interaction.channel)
             forced_format = self.config.get_forced_format(channel_name, server_id)
             matchmaking_manager = MatchmakingManager(forced_format, server_id)
             t_winner = manager.get_winner_from_loser(player_name)
             if t_winner is not None:
-                winner = matchmaking_manager.get_player_for_id(t_winner.discordId)
+                winner = matchmaking_manager.get_player_for_id(t_winner.discord_id)
                 loser = matchmaking_manager.get_player_for_id(interaction.user.id)
                 if winner is None:
-                    matchmaking_manager.register_player(t_winner.discordId, t_winner.username)
+                    matchmaking_manager.register_player(t_winner.discord_id, t_winner.username)
                 if loser is None:
                     matchmaking_manager.register_player(interaction.user.id, player_name)
-                matchmaking_manager.create_match(t_winner.discordId, interaction.user.id, True)
-                matchmaking_manager.end_match(t_winner.discordId)
+                matchmaking_manager.create_match(t_winner.discord_id, interaction.user.id, True)
+                matchmaking_manager.end_match(t_winner.discord_id)
             result = manager.report_loss(player_name)
             await interaction.followup.send(result.get_message())
 
@@ -279,9 +273,8 @@ class TournamentCommandManager(GenericCommandManager):
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
                 return
             await interaction.response.defer(ephemeral=True)
-            server_id = interaction.guild_id
             player_name = interaction.user.name
-            manager = TournamentManager(self.credentials, server_id)
+            manager = self.get_tournament_manager(interaction)
             result = manager.drop(player_name)
             await interaction.followup.send(result.get_message())
 
@@ -292,8 +285,7 @@ class TournamentCommandManager(GenericCommandManager):
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
                 return
             await interaction.response.defer(ephemeral=False)
-            server_id = interaction.guild_id
-            manager = TournamentManager(self.credentials, server_id)
+            manager = self.get_tournament_manager(interaction)
             result = manager.drop(player_name)
             await interaction.followup.send(result.get_message())
 
@@ -304,8 +296,7 @@ class TournamentCommandManager(GenericCommandManager):
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
                 return
             await interaction.response.defer(ephemeral=False)
-            server_id = interaction.guild_id
-            manager = TournamentManager(self.credentials, server_id)
+            manager = self.get_tournament_manager(interaction)
             result = manager.get_readable_active_matches()
             await interaction.followup.send(result.get_message())
             
@@ -357,15 +348,13 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE, description="Removes every player that is present in challonge but not locally")
         async def cleanup_challonge(interaction:Interaction):
-
-            server_id = interaction.guild_id
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
                 return
 
             await interaction.response.defer(ephemeral=True)
-            manager = TournamentManager(self.credentials, server_id)
+            manager = self.get_tournament_manager(interaction)
             players = manager.get_tournament_players()
             challonge_players = manager.get_challonge_players()
             unsynced = []

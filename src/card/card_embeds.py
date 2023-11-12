@@ -95,7 +95,6 @@ TYPE_NORMAL = "Normal"
 TYPE_LINK = "Link"
 TYPE_RITUAL = "Ritual"
 TYPE_PENDULUM = "Pendulum"
-TYPE_EFFECT = "Effect"
 TYPE_SPELL = "Spell"
 TYPE_TRAP = "Trap"
 

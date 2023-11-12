@@ -2,7 +2,6 @@ import os
 import json
 from typing import List
 from src.utils.utils import OperationResult
-from src.deck.deck_validation import Ydk, Deck
 import src.strings as Strings
 
 FOLDER_NAME = "./json/deckcollection/%d/%s/"
@@ -25,14 +24,6 @@ class CollectionDeck:
 		deck[PLAYER_NAME_KEY] = self.player_name
 		deck[DECK_FILENAME_KEY] = self.deck_file_name
 		return deck
-	
-	def to_readable_deck(self) -> Deck:
-		filename = self.deck_file_name
-		with open(filename, encoding="utf-8") as file:
-			decklist = file.read()
-			ydk = Ydk(decklist)
-			readable_decklist = ydk.get_deck()
-			return readable_decklist
 
 def deck_from_dict(dictionary:dict):
 	return CollectionDeck(dictionary.get(PLAYER_NAME_KEY), dictionary.get(DECK_FILENAME_KEY))

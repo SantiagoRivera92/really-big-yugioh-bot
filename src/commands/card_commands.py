@@ -4,8 +4,6 @@ from typing import List
 from discord import app_commands
 from discord import Interaction
 
-from src.utils.utils import ReallyBigYugiohBot
-from src.card.card_collection import CardCollection
 from src.card.card_embeds import card_to_embed
 
 from src.commands.generic_command_manager import GenericCommandManager
@@ -13,10 +11,6 @@ from src.commands.generic_command_manager import GenericCommandManager
 import src.strings as Strings
 
 class CardCommandManager(GenericCommandManager):
-
-    def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
-        super().__init__(bot, card_collection)
-        self.add_commands()
 
     def add_commands(self):
         @self.bot.tree.command(name=Strings.COMMAND_NAME_CARD, description="Displays card text for any given card name")
@@ -33,7 +27,7 @@ class CardCommandManager(GenericCommandManager):
                 await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
                 return
             forced_format = self.config.get_forced_format(channel_name, server_id)
-            card = self.card_collection.getCardFromCardName(cardname)
+            card = self.card_collection.get_card_from_card_name(cardname)
             if card is None:
                 await interaction.followup.send(Strings.ERROR_MESSAGE_NO_CARDS_WITH_NAME % cardname)
             else:
@@ -56,7 +50,7 @@ class CardCommandManager(GenericCommandManager):
             if forced_format is None:
                 await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMAT_TIED, ephemeral=True)
                 return
-            card = self.card_collection.getCardFromCardName(cardname)
+            card = self.card_collection.get_card_from_card_name(cardname)
             if card is None:
                 await interaction.response.send_message(Strings.ERROR_MESSAGE_ABSOLUTE_SEARCH_FAILED % cardname, ephemeral=True)
                 return
@@ -71,8 +65,7 @@ class CardCommandManager(GenericCommandManager):
         async def card_autocomplete(interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
             choices: List[app_commands.Choice[str]] = []
             if len(current) >= 3:
-                self.card_collection.refreshCards()
-                cards = self.card_collection.getCardsFromPartialCardName(current)
+                cards = self.card_collection.get_cards_from_partial_card_name(current)
                 for card in cards:
                     if len(choices) < 25:
                         choice = app_commands.Choice(name=card, value=card)

@@ -6,7 +6,6 @@ import src.strings as Strings
 import src.banlist.banlist_utils as Banlist
 
 SUPPORTED_FORMATS_KEY = "supported_formats"
-SANITIZED_NAMES_KEY = "sanitized_format_names"
 BANLIST_FILES_KEY = "banlist_files"
 CHANNEL_CONFIG_KEY = "channel_config"
 
@@ -73,9 +72,8 @@ class Config:
             if _format.lower() == format_name.lower():
                 return OperationResult( False, Strings.ERROR_CONFIG_FORMAT_ALREADY_EXISTS % format_name)
 
-        result = Banlist.write_banlist(
-            format_name, lflist_file, server_id
-        )
+        result = Banlist.write_banlist(format_name, lflist_file, server_id)
+        
         if result.was_successful():
             supported_formats.append(format_name)
             banlist_files = config.get(BANLIST_FILES_KEY)
@@ -102,11 +100,8 @@ class Config:
 
         if not found:
             return OperationResult(False, Strings.ERROR_CONFIG_FORMAT_DOESNT_EXIST_YET % format_name)
-
-        result = Banlist.write_banlist(
-            forced_format, lflist_file, server_id
-        )
-        return result
+        
+        return Banlist.write_banlist(forced_format, lflist_file, server_id)
 
     def remove_format(self, format_name, server_id):
         config = self.get_config_for_server(server_id)

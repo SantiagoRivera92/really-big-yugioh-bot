@@ -2,8 +2,6 @@ from PIL import Image, ImageDraw, ImageFont
 from src.deck.deck_validation import Deck
 from src.card.card_collection import CardCollection
 
-
-
 R, G, B = 0, 0, 0
 BACKGROUND_COLOR = (R,G,B)
 
@@ -27,9 +25,9 @@ class DeckAsImageGenerator:
 		self.card_collection = card_collection
 
 	def build_image_from_deck(self, deck: Deck, filename: str, deckname:str):
-		main_deck_images = [self.card_collection.getCardImageFromId(card.card_id) for card in deck.get_main_deck() for _ in range(card.copies)]
-		extra_deck_images = [self.card_collection.getCardImageFromId(card.card_id) for card in deck.get_extra_deck() for _ in range(card.copies)]
-		side_deck_images = [self.card_collection.getCardImageFromId(card.card_id) for card in deck.get_side_deck() for _ in range(card.copies)]
+		main_deck_images = [self.card_collection.get_card_image_from_id(card.card_id) for card in deck.get_main_deck() for _ in range(card.copies)]
+		extra_deck_images = [self.card_collection.get_card_image_from_id(card.card_id) for card in deck.get_extra_deck() for _ in range(card.copies)]
+		side_deck_images = [self.card_collection.get_card_image_from_id(card.card_id) for card in deck.get_side_deck() for _ in range(card.copies)]
 
 		main_deck_count = len(main_deck_images)
 		extra_deck_count = len(extra_deck_images)

@@ -33,13 +33,13 @@ PARTICIPANTS_KEY = 'participants'
 VALID_TOURNAMENT_TYPES = ["swiss", "double elimination", "single elimination", "round robin"]
 
 def sanitized_tournament_name(tournament_name:str):
-	legal_characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_.-"
+	legal_characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
 	sanitized_name = ""
 	for character in tournament_name:
 		if character in legal_characters:
-			sanitized_name = f"{sanitized_tournament_name}{character}"
+			sanitized_name = f"{sanitized_name}{character}"
 		else:
-			sanitized_name = f"{sanitized_tournament_name}_"
+			sanitized_name = f"{sanitized_name}_"
 	return sanitized_name
 
 class Player:
@@ -114,9 +114,6 @@ class Tournament:
 
 	def get_format(self):
 		return self.format
-
-	def get_name(self):
-		return self.name
 
 	def is_open(self):
 		return self.tournament_is_open
@@ -231,11 +228,14 @@ class TournamentManager:
 			}
 			if not tournament_type in VALID_TOURNAMENT_TYPES:
 				return OperationResult(False, Strings.ERROR_INVALID_TOURNAMENT_TYPE)
-			tournament_dict = challonge.tournaments.create(tournament_name, sanitized_tournament_name(tournament_name), tournament_type, **params)
+			tournament_name_sanitized = sanitized_tournament_name(tournament_name)
+			print(tournament_name_sanitized)
+			tournament_dict = challonge.tournaments.create(tournament_name, tournament_name_sanitized, tournament_type, **params)
 			tournament = Tournament(self.server_id)
 			tournament.set_url(tournament_dict[URL_KEY]).set_id(tournament_dict[ID_KEY]).set_name(tournament_name).set_format(format_name).open().save()
 			return OperationResult(True, Strings.BOT_MESSAGE_TOURNAMENT_CREATED % (tournament_name, tournament.get_url()))
 		except ChallongeException as exception:
+			print(f"{tournament_name}, {format_name}, {tournament_type}")
 			return OperationResult(False, str(exception))
 
 	def get_tournament_from_challonge(self):
@@ -418,13 +418,17 @@ class TournamentManager:
 		return OperationResult(False, Strings.ERROR_MESSAGE_TOURNAMENT_ALREADY_STARTED)
 
 	def end_tournament(self):
-		tournament = get_tournament_for_server(self.server_id)
-		if tournament is None:
-			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
-		if tournament.is_open():
-			return OperationResult(False, Strings.ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED)
-		challonge.tournaments.finalize(str(tournament.get_id()))
-		return OperationResult(True, Strings.BOT_MESSAGE_TOURNAMENT_ENDED % tournament.get_url())
+		try:
+			tournament = get_tournament_for_server(self.server_id)
+			if tournament is None:
+				return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
+			if tournament.is_open():
+				return OperationResult(False, Strings.ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED)
+			challonge.tournaments.finalize(str(tournament.get_id()))
+			return OperationResult(True, Strings.BOT_MESSAGE_TOURNAMENT_ENDED % tournament.get_url())
+		except ChallongeException as exception:
+			return OperationResult(False, str(exception))
+
 
 	def get_active_matches(self) -> List:
 		tournament = self.get_tournament_for_server()
@@ -433,6 +437,7 @@ class TournamentManager:
 			}
 		matches = challonge.matches.index(tournament.get_id(), **params)
 		return matches
+
 
 	def get_winner_from_loser(self, player_name:str) -> Union[Player | None]:
 		tournament = get_tournament_for_server(self.server_id)

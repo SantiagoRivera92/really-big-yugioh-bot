@@ -5,7 +5,7 @@ import time
 import os
 from PIL import Image
 
-def getRequest():
+def get_request():
     header = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
               'AppleWebKit/537.11 (KHTML, like Gecko) '
                             'Chrome/23.0.1271.64 Safari/537.11',
@@ -18,9 +18,9 @@ def getRequest():
     request = urllib.request.Request(url, None, header)
     return request
 
-def getImageRequest(imageUrl:str):
+def get_image_request(image_url:str):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'} 
-    request = urllib.request.Request(imageUrl, None, headers)
+    request = urllib.request.Request(image_url, None, headers)
     return request
 
 DATA = 'data'
@@ -35,56 +35,51 @@ class CardCollection:
     def __init__(self):
         self.cards = []
         self.timestamp = time.time()
-        self.refreshCards()
+        self.refresh_cards()
 
-    def refreshCards(self):
-        request = getRequest()
+    def refresh_cards(self):
+        request = get_request()
         if (len(self.cards) == 0 or time.time() - self.timestamp > 3600):
             with urllib.request.urlopen(request) as url:
                 self.cards = json.loads(url.read().decode()).get(DATA)
                 self.timestamp = time.time()
 
-    def getCardFromCardName(self, cardName):
-        self.refreshCards()
+    def get_card_from_card_name(self, cardName):
+        self.refresh_cards()
         for card in self.cards:
             if (card.get(KEY_NAME).lower() == cardName.lower()):
                 return card
         return None
 
-    def getCardsFromPartialCardName(self, cardName):
-        self.refreshCards()
+    def get_cards_from_partial_card_name(self, cardName):
+        self.refresh_cards()
         partialMatches: List[str] = []
         for card in self.cards:
             if cardName.lower() in card.get(KEY_NAME).lower():
                 partialMatches.append(card.get(KEY_NAME))
         return partialMatches
 
-    def getCardNameFromId(self, cardId):
-        self.refreshCards()
-        cardIdAsInt = int(cardId)
+    def get_card_name_from_id(self, card_id):
+        self.refresh_cards()
+        card_id_as_int = int(card_id)
         for card in self.cards:
-            if cardIdAsInt == card.get(KEY_ID):
+            if card_id_as_int == card.get(KEY_ID):
                 return card.get(KEY_NAME)
             for variant in card.get(KEY_CARD_IMAGES):
-                if cardIdAsInt == variant.get(KEY_ID):
+                if card_id_as_int == variant.get(KEY_ID):
                     return card.get(KEY_NAME)
 
-    def getCardImageFromId(self, cardId):
-        self.refreshCards()
-        cardIdAsInt = int(cardId)
+    def get_card_image_from_id(self, card_id):
+        self.refresh_cards()
+        card_id_as_int = int(card_id)
         for card in self.cards:
             for variant in card.get(KEY_CARD_IMAGES):
-                if cardIdAsInt == variant.get(KEY_ID):
-                    localFile = "./img/%d.jpg"%cardIdAsInt
-                    if not os.path.exists(localFile):
-                        imageUrl = variant.get(KEY_IMAGE_URL)
-                        request = getImageRequest(imageUrl)
-                        img = Image.open(urllib.request.urlopen(request))
-                        img.save(localFile)
-                    return localFile
+                if card_id_as_int == variant.get(KEY_ID):
+                    local_file = "./img/%d.jpg"%card_id_as_int
+                    if not os.path.exists(local_file):
+                        image_url = variant.get(KEY_IMAGE_URL)
+                        request = get_image_request(image_url)
+                        with Image.open(urllib.request.urlopen(request)) as img:
+                            img.save(local_file)
+                    return local_file
         return "./img/cardback.jpg"
-
-    def downloadAllImages(self):
-        for card in self.cards:
-            for variant in card.get(KEY_CARD_IMAGES):
-                self.getCardImageFromId(variant.get(KEY_ID))

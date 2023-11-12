@@ -3,8 +3,6 @@ from typing import List
 from discord import Interaction, app_commands, Attachment, File
 
 from src.commands.generic_command_manager import GenericCommandManager
-from src.card.card_collection import CardCollection
-from src.utils.utils import ReallyBigYugiohBot
 
 import src.banlist.banlist_utils as Banlist
 
@@ -16,12 +14,6 @@ def banlist_to_discord_file(banlist_file: str, format_name: str):
 
 class FormatCommandManager(GenericCommandManager):
 	
-	def __init__(self, bot: ReallyBigYugiohBot, card_collection: CardCollection):
-		super().__init__(bot, card_collection)
-		self.add_commands()
-
-
-
 	def add_commands(self):		
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_ADD, description="Adds a format to the bot.")
