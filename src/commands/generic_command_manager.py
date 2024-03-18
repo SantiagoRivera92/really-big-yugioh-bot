@@ -76,8 +76,6 @@ class GenericCommandManager(ABC):
         for char in invalid_characters:
             if char in filename:
                 return OperationResult(False, Strings.ERROR_FORMAT_NAME_INVALID_CHARACTER % char)
-        if filename == "Advanced":
-            return OperationResult(False, Strings.ERROR_FORMAT_NAME_ADVANCED)
         return OperationResult(True, "")
     
     

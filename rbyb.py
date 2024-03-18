@@ -42,7 +42,7 @@ async def decay_scores():
 		servers: List[int] = ServerConfig().get_enabled_servers()
 		for server_id in servers:
 			# Get list of formats for that server
-			formats = Config(card_collection).get_supported_formats(server_id)
+			formats = Config().get_supported_formats(server_id)
 			for _format in formats:
 				MatchmakingManager(_format, server_id).decay()
 	else:

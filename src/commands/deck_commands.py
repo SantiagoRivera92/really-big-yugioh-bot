@@ -132,7 +132,10 @@ class DeckCommandManager(GenericCommandManager):
                     deck = deck_file.read()
                     ydk = Ydk(deck)
 
-                    image = self.deck_images.build_image_from_deck(ydk.get_deck(), player_name, player_name)
+                    channel_name = self.get_channel_name(interaction.channel)
+                    forced_format = self.config.get_forced_format(channel_name, server_id)
+                    banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
                     image_url = self.uploader.upload_image(image)
 
                     embed = Embed(title=player_name)
@@ -214,7 +217,10 @@ class DeckCommandManager(GenericCommandManager):
                     ydk_as_string = ydk_as_string.decode("utf-8")
                     ydk_native = Ydk(ydk_as_string)
                     filename = ydk.filename.replace("_", " ")[:-4]
-                    image = self.deck_images.build_image_from_deck(ydk_native.get_deck(), "temp", filename)
+                    channel_name = self.get_channel_name(interaction.channel)
+                    forced_format = self.config.get_forced_format(channel_name, server_id)
+                    banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
                     with open("img/decks/temp.ydk", 'w', encoding="utf-8") as file:
                         deck_as_lines = ydk_as_string.split("\n")
                         for line in deck_as_lines:
@@ -228,7 +234,7 @@ class DeckCommandManager(GenericCommandManager):
                     embed.set_image(url="attachment://deck.jpg")
                     embed.add_field(name="", value=f"[See high resolution decklist]({image_url})")
 
-                    with open(image, "rb", encoding="utf-8") as fp:
+                    with open(image, "rb") as fp:
                         image_file = File(fp, filename="deck.jpg")
                         await interaction.followup.send(embed=embed, file=image_file)
                 else:
@@ -256,7 +262,11 @@ class DeckCommandManager(GenericCommandManager):
                 deck = manager.get_ydk_from_db("temp", db_url)
                 deck_name = manager.get_deck_name_from_db(db_url)
                 ydk = Ydk(deck)
-                image = self.deck_images.build_image_from_deck(ydk.get_deck(), "temp", deck_name)
+                
+                channel_name = self.get_channel_name(interaction.channel)
+                forced_format = self.config.get_forced_format(channel_name, server_id)
+                banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+                image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
                 image_url = self.uploader.upload_image(image)
 
                 embed = Embed(title=deck_name)

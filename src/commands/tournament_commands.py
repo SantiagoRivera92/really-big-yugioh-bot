@@ -328,10 +328,13 @@ class TournamentCommandManager(GenericCommandManager):
                 with open(filename, encoding="utf-8") as deck_file:
                     deck = deck_file.read()
                     ydk = Ydk(deck)
-
-                    image = self.deck_images.build_image_from_deck(ydk.get_deck(), player_name, player_name)
+                    
+                    channel_name = self.get_channel_name(interaction.channel)
+                    forced_format = self.config.get_forced_format(channel_name, server_id)
+                    banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
                     image_url = self.uploader.upload_image(image)
-
+                    
                     embed = Embed(title=player_name)
                     embed.set_image(url="attachment://deck.jpg")
                     embed.add_field(name="", value=f"[See high resolution decklist]({image_url})")

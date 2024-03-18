@@ -36,7 +36,17 @@ def fix_banlist(format_name, server_id, card_id, card_name, new_status):
         for line in lines:
             banlist.write(line)
             banlist.write("\n")
-    return OperationResult(True, Strings.BOT_MESSAGE_CARD_ADDED_TO_BANLIST)
+    if new_status == -1:
+        status = "illegal"
+    elif new_status == 0:
+        status = "forbidden"
+    elif new_status == 1:
+        status = "limited"
+    elif new_status == 2:
+        status = "semi-limited"
+    else:
+        status = "unlimited"
+    return OperationResult(True, Strings.BOT_MESSAGE_CARD_ADDED_TO_BANLIST % (card_name, status, format_name))
 
 def delete_banlist(format_name, server_id):
     filename = f"./lflist/{server_id}/{format_name}.lflist.conf"

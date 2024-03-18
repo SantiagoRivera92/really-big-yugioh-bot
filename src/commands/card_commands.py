@@ -1,5 +1,6 @@
 
 from typing import List
+from typing import Literal
 
 from discord import app_commands
 from discord import Interaction
@@ -39,8 +40,19 @@ class CardCommandManager(GenericCommandManager):
                     await interaction.followup.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS, description="Changes the status of a card in the banlist tied to this channel.")
-        async def change_status(interaction: Interaction, cardname: str, status: int):
+        async def change_status(interaction: Interaction, cardname: str, card_status: Literal["Illegal", "Forbidden", "Limited", "Semi-Limited", "Unlimited"]):
             result = self.can_command_execute(interaction, True)
+            if card_status == "Illegal":
+                status = -1
+            elif card_status == "Forbidden":
+                status = 0
+            elif card_status == "Limited":
+                status = 1
+            elif card_status == "Semi-Limited":
+                status = 2
+            else:
+                status = 3
+            
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
                 return
@@ -72,10 +84,4 @@ class CardCommandManager(GenericCommandManager):
                         choices.append(choice)
                     else:
                         continue
-            return choices
-        @change_status.autocomplete("status")
-        async def status_autocomplete(interaction:Interaction, current:int) -> List[app_commands.Choice[int]]:
-            choices: List[app_commands.Choice[int]] = []
-            for i in range(-1, 4):
-                choices.append(app_commands.Choice(name=f"{i}",value=i))
             return choices

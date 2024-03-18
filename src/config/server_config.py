@@ -12,6 +12,8 @@ class ServerConfig:
             server_list = json.load(server_list)
         if server_id in server_list:
             return OperationResult(True, "")
+        if server_id is None:
+            return OperationResult(False, Strings.ERROR_DM)
         
         return OperationResult(False, Strings.ERROR_PAY_ME_MONEY % server_id)
     

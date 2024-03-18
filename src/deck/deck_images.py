@@ -1,3 +1,5 @@
+import time
+import math
 from PIL import Image, ImageDraw, ImageFont
 from src.deck.deck_validation import Deck
 from src.card.card_collection import CardCollection
@@ -19,15 +21,66 @@ DECKS_FOLDER_NAME = "./img/decks"
 
 FONT_FILE = "font/Roboto-Medium.ttf"
 
+IMAGE_LIMIT_MARGIN = 8
+IMAGE_LIMIT_SIZE = int(0.3 * CARD_HEIGHT)
+
+IMAGE_FORBIDDEN = "./img/static/forbidden.png"
+IMAGE_LIMITED = "./img/static/limited.png"
+IMAGE_SEMILIMITED = "./img/static/semi-limited.png"
+
+def get_status_in_banlist(card_id, banlist):
+	banlist_as_lines = banlist.split("\n")
+	card_id = int(card_id)
+	id_as_string = str(card_id)
+	for line in banlist_as_lines:
+		id_in_line = line.split(' ')[0]
+		if id_as_string == id_in_line:
+			id_count = int(math.log10(card_id))+1
+			line = line[id_count+1:id_count+2]
+			if line == "-":
+				line = "-1"
+			return int(line)
+	return -1
+
 class DeckAsImageGenerator:
 
 	def __init__(self, card_collection:CardCollection):
 		self.card_collection = card_collection
+	
 
-	def build_image_from_deck(self, deck: Deck, filename: str, deckname:str):
-		main_deck_images = [self.card_collection.get_card_image_from_id(card.card_id) for card in deck.get_main_deck() for _ in range(card.copies)]
-		extra_deck_images = [self.card_collection.get_card_image_from_id(card.card_id) for card in deck.get_extra_deck() for _ in range(card.copies)]
-		side_deck_images = [self.card_collection.get_card_image_from_id(card.card_id) for card in deck.get_side_deck() for _ in range(card.copies)]
+	def build_image_with_format(self, deck:Deck, filename:str, deckname:str, banlist_file):
+		start_time = time.time()
+
+		img_forbidden = Image.open(IMAGE_FORBIDDEN).convert("RGBA")
+		img_limited = Image.open(IMAGE_LIMITED).convert("RGBA")
+		img_semilimited = Image.open(IMAGE_SEMILIMITED).convert("RGBA")
+  
+		img_forbidden = img_forbidden.resize((IMAGE_LIMIT_SIZE, IMAGE_LIMIT_SIZE))
+		img_limited = img_limited.resize((IMAGE_LIMIT_SIZE, IMAGE_LIMIT_SIZE))
+		img_semilimited = img_semilimited.resize((IMAGE_LIMIT_SIZE, IMAGE_LIMIT_SIZE))
+
+		with open(banlist_file, encoding="utf-8") as file:
+			banlist = file.read()
+
+		card_id_to_image = {}
+
+		# Populate the main_deck_images with card IDs and update the card_id_to_image set
+		main_deck_images = []
+		for card in deck.get_main_deck():
+			main_deck_images.extend([card.card_id] * card.copies)
+			card_id_to_image[card.card_id] = self.card_collection.get_card_image_from_id(card.card_id)
+
+		# Populate the extra_deck_images with card IDs and update the card_id_to_image set
+		extra_deck_images = []
+		for card in deck.get_extra_deck():
+			extra_deck_images.extend([card.card_id] * card.copies)
+			card_id_to_image[card.card_id] = self.card_collection.get_card_image_from_id(card.card_id)
+
+		# Populate the side_deck_images with card IDs and update the card_id_to_image set
+		side_deck_images = []
+		for card in deck.get_side_deck():
+			side_deck_images.extend([card.card_id] * card.copies)
+			card_id_to_image[card.card_id] = self.card_collection.get_card_image_from_id(card.card_id)
 
 		main_deck_count = len(main_deck_images)
 		extra_deck_count = len(extra_deck_images)
@@ -81,26 +134,48 @@ class DeckAsImageGenerator:
 			draw.rectangle(side_deck_rect, outline=(255, 255, 255), width=3)
 
 		# Draw main deck cards
-		for i, image_url in enumerate(main_deck_images):
+		for i, card_id in enumerate(main_deck_images):
+			image_url = card_id_to_image.get(card_id)
 			img = Image.open(image_url)
+			if img.size != (CARD_WIDTH, CARD_HEIGHT):
+				img = img.resize((CARD_WIDTH, CARD_HEIGHT))
 			x = LATERAL_MARGIN + (i % 10) * (CARD_WIDTH + MAIN_DECK_MARGIN)
 			y = HEADER_MARGIN + (i // 10) * (CARD_HEIGHT + MAIN_DECK_MARGIN)
 			deck_image.paste(img, (x, y))
+
+			status = get_status_in_banlist(card_id, banlist)
+			if status <= 0:
+				deck_image.paste(img_forbidden, (x + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_forbidden)
+			elif status == 1:
+				deck_image.paste(img_limited, (x + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_limited)
+			elif status == 2:
+				deck_image.paste(img_semilimited, (x + IMAGE_LIMIT_MARGIN , y + IMAGE_LIMIT_MARGIN), img_semilimited)
 
 		if has_extra_deck:
 			if extra_deck_count > 1:
 				extra_deck_margin = (10 * CARD_WIDTH + 9 * MAIN_DECK_MARGIN - extra_deck_count * CARD_WIDTH) / (extra_deck_count - 1)
 			else:
 				extra_deck_margin = 10 * CARD_WIDTH + 9 * MAIN_DECK_MARGIN - CARD_WIDTH
-       
+
 
 			# Draw extra deck cards
-			for i, image_url in enumerate(extra_deck_images):
+			for i, card_id in enumerate(extra_deck_images):
+				image_url = card_id_to_image.get(card_id)
 				img = Image.open(image_url)
+				if img.size != (CARD_WIDTH, CARD_HEIGHT):
+					img = img.resize((CARD_WIDTH, CARD_HEIGHT))
 				x = LATERAL_MARGIN + i * CARD_WIDTH + i * extra_deck_margin
 				y = HEADER_MARGIN + main_deck_rows * (CARD_HEIGHT + MAIN_DECK_MARGIN) + MAIN_DECK_MARGIN + SECTION_MARGIN
 				deck_image.paste(img, (round(x), y))
-   
+				
+				status = get_status_in_banlist(card_id, banlist)
+				if status <= 0:
+					deck_image.paste(img_forbidden, (round(x) + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_forbidden)
+				elif status == 1:
+					deck_image.paste(img_limited, (round(x) + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_limited)
+				elif status == 2:
+					deck_image.paste(img_semilimited, (round(x) + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_semilimited)
+
 		if has_side_deck:
 			if side_deck_count > 1:
 				side_deck_margin = (10 * CARD_WIDTH + 9 * MAIN_DECK_MARGIN - side_deck_count * CARD_WIDTH) / (side_deck_count - 1)
@@ -108,11 +183,22 @@ class DeckAsImageGenerator:
 				side_deck_margin = 10 * CARD_WIDTH + 9 * MAIN_DECK_MARGIN - CARD_WIDTH
 
 			# Draw side deck cards
-			for i, image_url in enumerate(side_deck_images):
+			for i, card_id in enumerate(side_deck_images):
+				image_url = card_id_to_image.get(card_id)
 				img = Image.open(image_url)
+				if img.size != (CARD_WIDTH, CARD_HEIGHT):
+					img = img.resize((CARD_WIDTH, CARD_HEIGHT))
 				x = LATERAL_MARGIN + i * CARD_WIDTH + i * side_deck_margin
 				y = HEADER_MARGIN + main_deck_rows * (CARD_HEIGHT + MAIN_DECK_MARGIN) + MAIN_DECK_MARGIN + SECTION_MARGIN + CARD_HEIGHT + SECTION_MARGIN
 				deck_image.paste(img, (round(x), y))
+    
+				status = get_status_in_banlist(card_id, banlist)
+				if status <= 0:
+					deck_image.paste(img_forbidden, (round(x) + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_forbidden)
+				elif status == 1:
+					deck_image.paste(img_limited, (round(x) + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_limited)
+				elif status == 2:
+					deck_image.paste(img_semilimited, (round(x) + IMAGE_LIMIT_MARGIN, y + IMAGE_LIMIT_MARGIN), img_semilimited)
 
 		# Draw white rectangle on top of the main deck
 		main_deck_header_rect = (
@@ -181,4 +267,6 @@ class DeckAsImageGenerator:
 		filename = f"./img/decks/{filename}.jpg"
 		deck_image = deck_image.resize((width//2, height//2))
 		deck_image.save(filename)
+		end_time = time.time() - start_time
+		print(f"Time to generate the deck \"{filename}\": {end_time:.3f} seconds")
 		return filename

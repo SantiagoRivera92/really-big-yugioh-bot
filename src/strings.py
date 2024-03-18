@@ -2,7 +2,7 @@
 
 ERROR_BANLIST_FILE_MISSING = "Banlist file doesn't exist."
 
-BOT_MESSAGE_CARD_ADDED_TO_BANLIST = "Card added to banlist."
+BOT_MESSAGE_CARD_ADDED_TO_BANLIST = "%s is now %s in %s."
 
 # Banlist validation
 
@@ -65,6 +65,7 @@ MESSAGE_MATCHMAKING_WON_ELO_UPDATED = "<@%d> (%.2f => %.2f) won their match agai
 # Server Config
 
 ERROR_PAY_ME_MONEY = "This server is not enabled.\n\nTo enable this server you have to be a member in https://patreon.com/DiamondDudeYGO \n\nOnce you've done that, contact @DiamondDudeYGO#5198 with this server ID: %d."
+ERROR_DM = "This command is not available via Direct Message. Please use it on a server instead."
 
 # Utils
 
