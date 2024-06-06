@@ -9,7 +9,7 @@ from src.config.config import Config
 from src.card.card_collection import CardCollection
 from src.deck.deck_validation import DeckValidator
 from src.credentials_manager import CredentialsManager
-from src.deck.new_deck_images import DeckAsImageGenerator
+from src.deck.deck_images import DeckAsImageGenerator
 from src.image_uploader import Uploader
 
 from src.utils.utils import OperationResult, ReallyBigYugiohBot
