@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from discord import Interaction
+
 import discord
 
 from src.config.server_config import ServerConfig
@@ -8,7 +9,7 @@ from src.config.config import Config
 from src.card.card_collection import CardCollection
 from src.deck.deck_validation import DeckValidator
 from src.credentials_manager import CredentialsManager
-from src.deck.deck_images import DeckAsImageGenerator
+from src.deck.new_deck_images import DeckAsImageGenerator
 from src.image_uploader import Uploader
 
 from src.utils.utils import OperationResult, ReallyBigYugiohBot
@@ -43,6 +44,25 @@ class GenericCommandManager(ABC):
         if isinstance(channel, discord.channel.PartialMessageable):
             return OTHER_KEY
         return channel.name
+    
+    def identify_command(self, interaction: Interaction, command_name: str, *args):
+        guild = interaction.guild.name
+        author = interaction.user.name
+        screen_name = interaction.user.display_name
+        server_id = interaction.guild_id
+        authorized = self.can_command_execute(interaction, False).success
+        if authorized:
+            # Print basic command information
+            print(f"\nUser @{author} (@{screen_name}) called /{command_name} on server \"{guild}\" ({server_id}, server authorized)")
+        else:
+            print(f"\nUser @{author} (@{screen_name}) called /{command_name} on server \"{guild}\" ({server_id}, server unauthorized)")
+        
+        # Print positional arguments
+        if args:
+            print("    Positional arguments:")
+            for arg in args:
+                print(f"    - {arg}")
+        print("")
     
     def can_command_execute(self, interaction: Interaction, admin_only):
         server_id = interaction.guild_id

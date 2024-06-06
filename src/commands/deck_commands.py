@@ -45,6 +45,7 @@ class DeckCommandManager(GenericCommandManager):
     def add_commands(self):
         @self.bot.tree.command(name=Strings.COMMAND_NAME_DECK_VALIDATE, description="Validates a deck")
         async def validate_deck(interaction: Interaction, ydk: Attachment):
+            self.identify_command(interaction, Strings.COMMAND_NAME_DECK_VALIDATE)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, False)
             if result.was_successful():
@@ -75,6 +76,7 @@ class DeckCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_YDK_DECK, description="Gets a decklist as a YDK file")
         async def get_ydk_decklist(interaction: Interaction, player_name: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_YDK_DECK, player_name)
             server_id = interaction.guild_id
             player_name = f"{interaction.user.name}"
             result = self.can_command_execute(interaction, True)
@@ -106,6 +108,7 @@ class DeckCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_IMG_DECK, description="Gets a decklist as an image")
         async def get_img_deck(interaction: Interaction, player_name: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_IMG_DECK, player_name)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, True)
             if result.was_successful():
@@ -135,7 +138,7 @@ class DeckCommandManager(GenericCommandManager):
                     channel_name = self.get_channel_name(interaction.channel)
                     forced_format = self.config.get_forced_format(channel_name, server_id)
                     banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
-                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
+                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", player_name, forced_format, banlist_file)
                     image_url = self.uploader.upload_image(image)
 
                     embed = Embed(title=player_name)
@@ -153,6 +156,7 @@ class DeckCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_TXT_DECK, description="Gets a decklist in readable form")
         async def get_readable_decklist(interaction: Interaction, player_name: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_TXT_DECK, player_name)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, True)
             if result.was_successful():
@@ -182,6 +186,7 @@ class DeckCommandManager(GenericCommandManager):
                 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_YDK_TXT, description="Shares a deck as text")
         async def share_ydk_txt(interaction:Interaction, ydk: Attachment):
+            self.identify_command(interaction, Strings.COMMAND_NAME_SHARE_DECK_YDK_TXT)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, False)
             if result.was_successful():
@@ -204,6 +209,7 @@ class DeckCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_YDK, description="Shares an image of a YDK deck")
         async def share_ydk(interaction: Interaction, ydk: Attachment):
+            self.identify_command(interaction, Strings.COMMAND_NAME_SHARE_DECK_YDK)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, False)
             if result.was_successful():
@@ -215,12 +221,11 @@ class DeckCommandManager(GenericCommandManager):
                 if ydk.filename.endswith(".ydk"):
                     ydk_as_string = await ydk.read()
                     ydk_as_string = ydk_as_string.decode("utf-8")
-                    ydk_native = Ydk(ydk_as_string)
                     filename = ydk.filename.replace("_", " ")[:-4]
                     channel_name = self.get_channel_name(interaction.channel)
                     forced_format = self.config.get_forced_format(channel_name, server_id)
                     banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
-                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
+                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", filename, forced_format, banlist_file)
                     with open("img/decks/temp.ydk", 'w', encoding="utf-8") as file:
                         deck_as_lines = ydk_as_string.split("\n")
                         for line in deck_as_lines:
@@ -244,6 +249,7 @@ class DeckCommandManager(GenericCommandManager):
                 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_DB, description="Shares an image of a Duelingbook deck")
         async def share_ydk_db(interaction: Interaction, db_url:str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_SHARE_DECK_DB, db_url)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, False)
             if result.was_successful():
@@ -266,7 +272,7 @@ class DeckCommandManager(GenericCommandManager):
                 channel_name = self.get_channel_name(interaction.channel)
                 forced_format = self.config.get_forced_format(channel_name, server_id)
                 banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
-                image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
+                image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, forced_format, banlist_file)
                 image_url = self.uploader.upload_image(image)
 
                 embed = Embed(title=deck_name)

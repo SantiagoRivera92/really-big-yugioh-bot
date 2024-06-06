@@ -54,7 +54,7 @@ class DeckAsImageGenerator:
 		img_forbidden = Image.open(IMAGE_FORBIDDEN).convert("RGBA")
 		img_limited = Image.open(IMAGE_LIMITED).convert("RGBA")
 		img_semilimited = Image.open(IMAGE_SEMILIMITED).convert("RGBA")
-  
+
 		img_forbidden = img_forbidden.resize((IMAGE_LIMIT_SIZE, IMAGE_LIMIT_SIZE))
 		img_limited = img_limited.resize((IMAGE_LIMIT_SIZE, IMAGE_LIMIT_SIZE))
 		img_semilimited = img_semilimited.resize((IMAGE_LIMIT_SIZE, IMAGE_LIMIT_SIZE))
@@ -157,7 +157,6 @@ class DeckAsImageGenerator:
 			else:
 				extra_deck_margin = 10 * CARD_WIDTH + 9 * MAIN_DECK_MARGIN - CARD_WIDTH
 
-
 			# Draw extra deck cards
 			for i, card_id in enumerate(extra_deck_images):
 				image_url = card_id_to_image.get(card_id)
@@ -222,7 +221,7 @@ class DeckAsImageGenerator:
 		if has_extra_deck:
 			extra_deck_header_rect = (
 				extra_deck_rect[0],
-				extra_deck_rect[1] - 100 - 8,
+				extra_deck_rect[1] - 92,
 				extra_deck_rect[2],
 				extra_deck_rect[1] - 8
 			)
@@ -240,7 +239,7 @@ class DeckAsImageGenerator:
 		if has_side_deck:
 			side_deck_header_rect = (
 				side_deck_rect[0],
-				side_deck_rect[1] - 100 - 8,
+				side_deck_rect[1] - 92,
 				side_deck_rect[2],
 				side_deck_rect[1] - 8
 			)
@@ -256,12 +255,12 @@ class DeckAsImageGenerator:
 
 		# Add text to the header
 		header_text = deckname
-		header_font = ImageFont.truetype(FONT_FILE, 86)
+		font_size = 128
+		header_font = ImageFont.truetype(FONT_FILE, font_size)
 		header_bounding_box = draw.textbbox((0, 0), header_text, font=header_font)
 		header_text_width = header_bounding_box[2] - header_bounding_box[0]
-		header_text_height = header_bounding_box[3] - header_bounding_box[1]
 		header_text_x = (width - header_text_width) // 2
-		header_text_y = (100 - header_text_height) // 2
+		header_text_y = (322 - font_size) // 2
 		draw.text((header_text_x, header_text_y), header_text, font=header_font, fill=(255, 255, 255))
 
 		filename = f"./img/decks/{filename}.jpg"

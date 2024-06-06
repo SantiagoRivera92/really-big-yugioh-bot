@@ -24,7 +24,7 @@ class TournamentCommandManager(GenericCommandManager):
     
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CREATE, description="Creates a new tournament. This deletes any previous tournaments and decklists!")
         async def create_tournament(interaction: Interaction, tournament_name: str, format_name: str, tournament_type: str):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_CREATE, tournament_name, format_name, tournament_type)
             server_id = interaction.guild_id
 
             result = self.can_command_execute(interaction, True)
@@ -60,6 +60,8 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_START, description="Starts the tournament.")
         async def start_tournament(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_START)
+
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
@@ -75,6 +77,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_END, description="Ends the tournament.")
         async def end_tournament(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_END)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -87,6 +90,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_INFO, description="Gets the tournament url")
         async def tournament_info(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_INFO)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -125,6 +129,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN_YDK, description="Registers to an open tournament using a .ydk, or updates your deck if already registered")
         async def register_ydk(interaction: Interaction, ydk: Attachment):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_JOIN_YDK)
             result = self.can_command_execute(interaction, False)
             server_id = interaction.guild_id
             if not result.was_successful():
@@ -150,6 +155,7 @@ class TournamentCommandManager(GenericCommandManager):
                 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_JOIN_DB, description="Registers to a tournament using a db url, or updates your deck if already registered.")
         async def register_ydk_db(interaction: Interaction, duelingbook_link: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_JOIN_DB, duelingbook_link)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -175,6 +181,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SET_DB_NAME, description="Sets your Duelingbook name for a tournament")
         async def set_db_name(interaction:Interaction, db_name:str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_SET_DB_NAME, db_name)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message())
@@ -192,6 +199,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_GET_DB_NAME, description="Gets the Duelinbgook username for an user.")
         async def get_db_name(interaction:Interaction, player_name:str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_GET_DB_NAME, player_name)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message())
@@ -207,6 +215,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_REPORT_LOSS, description="Reports you lost a tournament match")
         async def report_tournament_loss(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_REPORT_LOSS)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -239,6 +248,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_FORCE_LOSS, description="Forces a player to lose a match")
         async def force_tournament_loss(interaction: Interaction, player_name: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_FORCE_LOSS, player_name)
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -264,6 +274,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_DROP, description="Drop from the tournament")
         async def drop(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_DROP)
             drop_enabled = False
             if not drop_enabled and interaction.guild_id == 459826576536764426:
                 await interaction.response.send_message("Manual dropping is currently disabled. Please ask _tournament Staff to drop you.")
@@ -280,6 +291,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_DQ, description="Removes a player from the tournament")
         async def dq(interaction: Interaction, player_name: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_DQ, player_name)
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -291,6 +303,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_PRINT_ACTIVE_MATCHES, description="Gets a list of unfinished matches")
         async def active_matches(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_PRINT_ACTIVE_MATCHES)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)
@@ -302,6 +315,7 @@ class TournamentCommandManager(GenericCommandManager):
             
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CONFIRM_DECK, description="Shows the deck you have currently registered")
         async def confirm_deck(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_CONFIRM_DECK)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, False)
             if result.was_successful():
@@ -317,7 +331,7 @@ class TournamentCommandManager(GenericCommandManager):
                 players = deck_collection_manager.get_registered_players()
                 found = False
                 for player in players:
-                    if player_name.lower() in player.lower():
+                    if player_name.lower() == player.lower():
                         found = True
                         player_name = player
                         break
@@ -332,7 +346,7 @@ class TournamentCommandManager(GenericCommandManager):
                     channel_name = self.get_channel_name(interaction.channel)
                     forced_format = self.config.get_forced_format(channel_name, server_id)
                     banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
-                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", deck_name, banlist_file)
+                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", player_name, forced_format, banlist_file)
                     image_url = self.uploader.upload_image(image)
                     
                     embed = Embed(title=player_name)
@@ -351,6 +365,7 @@ class TournamentCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE, description="Removes every player that is present in challonge but not locally")
         async def cleanup_challonge(interaction:Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE)
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)

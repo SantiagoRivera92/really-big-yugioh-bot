@@ -16,6 +16,7 @@ class CardCommandManager(GenericCommandManager):
     def add_commands(self):
         @self.bot.tree.command(name=Strings.COMMAND_NAME_CARD, description="Displays card text for any given card name")
         async def card(interaction: Interaction, cardname: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_CARD, cardname)
             result = self.can_command_execute(interaction, False)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message())
@@ -41,6 +42,7 @@ class CardCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS, description="Changes the status of a card in the banlist tied to this channel.")
         async def change_status(interaction: Interaction, cardname: str, card_status: Literal["Illegal", "Forbidden", "Limited", "Semi-Limited", "Unlimited"]):
+            self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS, cardname, card_status)
             result = self.can_command_execute(interaction, True)
             if card_status == "Illegal":
                 status = -1

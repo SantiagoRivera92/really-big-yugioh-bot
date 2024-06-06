@@ -18,6 +18,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_ADD, description="Adds a format to the bot.")
 		async def add_format(interaction: Interaction, format_name: str, lflist: Attachment):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_ADD, format_name)
 			server_id = interaction.guild_id
 			result = self.can_command_execute(interaction, True)
 			if not result.was_successful():
@@ -45,6 +46,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_TIE, description="Sets the default format for this channel.")
 		async def tie_format_to_channel(interaction: Interaction, format_name: str):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_TIE, format_name)
 			server_id = interaction.guild_id
 			result = self.can_command_execute(interaction, True)
 			if not result.was_successful():
@@ -62,6 +64,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_DEFAULT, description="Sets the default format for the entire server.")
 		async def set_default_format(interaction: Interaction, format_name: str):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_DEFAULT, format_name)
 			server_id = interaction.guild_id
 			result = self.can_command_execute(interaction, True)
 
@@ -79,6 +82,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_CHECK_TIED, description="Checks if this channel has a format tied to it",)
 		async def check_tied_format(interaction: Interaction):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_CHECK_TIED)
 			server_id = interaction.guild_id
 			result = self.can_command_execute(interaction, False)
 			if not result.was_successful():
@@ -100,6 +104,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_UPDATE, description="Updates the banlist for an already existing format",)
 		async def update_format(interaction: Interaction, format_name: str, lflist: Attachment):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_UPDATE, format_name)
 			server_id = interaction.guild_id
 
 			result = self.is_valid_filename(format_name)
@@ -141,6 +146,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_REMOVE, description="Removes a format")
 		async def remove_format(interaction: Interaction, format_name: str):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_REMOVE, format_name)
 			server_id = interaction.guild_id
 
 			result = self.is_valid_filename(format_name)
@@ -174,6 +180,7 @@ class FormatCommandManager(GenericCommandManager):
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_BANLIST, description="Get an EDOPRO banlist")
 		async def get_banlist(interaction: Interaction):
+			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_BANLIST)
 			server_id = interaction.guild_id
 			result = self.can_command_execute(interaction, False)
 			if result.was_successful():

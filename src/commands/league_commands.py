@@ -14,6 +14,7 @@ class LeagueCommandManager(GenericCommandManager):
         
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_SET_DEFAULT_OUTPUT_CHANNEL, description="Sets this channel as the default output channel for League-related commands.")
         async def set_default_league_channel(interaction:Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_SET_DEFAULT_OUTPUT_CHANNEL)
             server_id = interaction.guild_id
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
@@ -26,7 +27,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_REGISTER, description="Register a player for a league.")
         async def register_for_league(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_REGISTER)
             server_id = interaction.guild_id
             player_id = interaction.user.id
             player_name = interaction.user.name
@@ -47,7 +48,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_RATING, description="Checks your score in the leaderboard for the format tied to this channel.")
         async def check_rating(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_RATING)
             server_id = interaction.guild_id
             player_id = interaction.user.id
             channel_name = self.get_channel_name(interaction.channel)
@@ -70,7 +71,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_ACTIVE_MATCHES, description="Returns the full list of active matches.")
         async def list_active_matches(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_ACTIVE_MATCHES)
             server_id = interaction.guild_id
             channel_name = self.get_channel_name(interaction.channel)
             result = self.can_command_execute(interaction, False)
@@ -98,7 +99,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_GET_MATCH, description="Returns your active ranked match for this league if you have one.")
         async def get_active_match(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_GET_MATCH)
             server_id = interaction.guild_id
             player_id = interaction.user.id
             channel_name = self.get_channel_name(interaction.channel)
@@ -124,7 +125,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_LEADERBOARD, description="Returns the leaderboard for this league.")
         async def print_leaderboard(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_LEADERBOARD)
             server_id = interaction.guild_id
             channel_name = self.get_channel_name(interaction.channel)
             result = self.can_command_execute(interaction, False)
@@ -151,7 +152,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_JOIN, description="Joins the ranked queue. If another player joins it in 10 minutes, a ranked match starts.")
         async def join_queue(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_JOIN)
             server_id = interaction.guild_id
             player_id = interaction.user.id
             channel_name = self.get_channel_name(interaction.channel)
@@ -184,7 +185,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_CANCEL, description="Cancels an active match. Use only if your opponent is unresponsive.")
         async def cancel_match(interaction: Interaction):
-
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_CANCEL)
             server_id = interaction.guild_id
             player_id = interaction.user.id
             channel_name = self.get_channel_name(interaction.channel)
@@ -208,8 +209,8 @@ class LeagueCommandManager(GenericCommandManager):
             
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_LOST, description="Notifies you lost your ranked match.")
-        async def notify_ranked_win(interaction: Interaction):
-
+        async def notify_ranked_loss(interaction: Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_LOST)
             server_id = interaction.guild_id
             player_id = interaction.user.id
             channel_name = self.get_channel_name(interaction.channel)
@@ -243,6 +244,7 @@ class LeagueCommandManager(GenericCommandManager):
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_LEAGUE_FORCE_LOSS, description="Declares a loser for a match. Admin only.")
         async def force_loss(interaction: Interaction, player_name: str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_LEAGUE_FORCE_LOSS, player_name)
             result = self.can_command_execute(interaction, True)
             if not result.was_successful():
                 await interaction.response.send_message(result.get_message(), ephemeral=True)

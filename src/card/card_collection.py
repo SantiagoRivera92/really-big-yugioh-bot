@@ -75,11 +75,11 @@ class CardCollection:
         for card in self.cards:
             for variant in card.get(KEY_CARD_IMAGES):
                 if card_id_as_int == variant.get(KEY_ID):
-                    local_file = "./img/%d.jpg"%card_id_as_int
+                    local_file = "./img/card/%d.jpg"%card_id_as_int
                     if not os.path.exists(local_file):
                         image_url = variant.get(KEY_IMAGE_URL)
                         request = get_image_request(image_url)
                         with Image.open(urllib.request.urlopen(request)) as img:
                             img.save(local_file)
                     return local_file
-        return "./img/cardback.jpg"
+        return "./img/card/cardback.jpg"

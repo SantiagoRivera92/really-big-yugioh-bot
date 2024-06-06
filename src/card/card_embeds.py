@@ -17,6 +17,9 @@ CARD_SCALE_KEY = 'scale'
 CARD_LINK_RATING_KEY = 'linkval'
 CARD_LINK_MARKERS_KEY = 'linkmarkers'
 CARD_DESC_KEY = 'desc'
+CARD_PRICES_KEY = 'card_prices'
+CARD_CARDMARKET_PRICE_KEY = 'cardmarket_price'
+CARD_TCGPLAYER_PRICE_KEY = 'tcgplayer_price'
 
 LINK_MARKER_TOP_LEFT = 'Top-Left'
 LINK_MARKER_TOP = 'Top'
@@ -148,6 +151,7 @@ def card_to_embed(card, banlist_file, format_name, bot):
 	defense = card.get(CARD_DEF_KEY)
 	scale = card.get(CARD_SCALE_KEY)
 	linkval = card.get(CARD_LINK_RATING_KEY)
+	prices = card.get(CARD_PRICES_KEY)
 	emoji = ""
 	attr_emoji = ""
 	type_emoji = ""
@@ -324,7 +328,13 @@ def card_to_embed(card, banlist_file, format_name, bot):
 		
 		if TYPE_PENDULUM in c_type:
 			embed.add_field(name="Scale", value=scale)
-
+	if prices is not None and len(prices) > 0:
+		cardmarket = prices[0].get(CARD_CARDMARKET_PRICE_KEY)
+		tcgplayer = prices[0].get(CARD_TCGPLAYER_PRICE_KEY)
+		if cardmarket != "0.00":
+			embed.add_field(name="Price (Cardmarket)", value=f"{cardmarket}€", inline = False)
+		if tcgplayer != "0.00":
+			embed.add_field(name="Price (TCGPlayer)", value=f"${tcgplayer}")
 	return embed
 
 def format_desc(card):
