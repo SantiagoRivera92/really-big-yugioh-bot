@@ -12,6 +12,7 @@ from src.deck.deck_collection import DeckCollectionManager
 from src.user_manager import UserManager
 from src.league.matchmaking import MatchmakingManager
 from src.duelingbook.duelingbook import DuelingbookManager
+from src.deck.deck_analysis import DeckAnalysisManager
 
 import src.strings as Strings
 class TournamentCommandManager(GenericCommandManager):
@@ -21,6 +22,32 @@ class TournamentCommandManager(GenericCommandManager):
         return TournamentManager(self.credentials, server_id)
         
     def add_commands(self):
+        
+        @self.bot.tree.command(name=Strings.COMMAND_NAME_ANALYZE_TOURNAMENT_DECKS, description="Builds a meta analysis of a torunament")
+        async def analyze_tournament_decks(interaction:Interaction):
+            self.identify_command(interaction, Strings.COMMAND_NAME_ANALYZE_TOURNAMENT_DECKS)
+            server_id = interaction.guild_id
+            result = self.can_command_execute(interaction, True)
+            if result.was_successful():
+                supported_formats = self.config.get_supported_formats(server_id)
+                if len(supported_formats) == 0:
+                    await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+                    return
+                await interaction.response.defer(ephemeral=True)
+                channel_name = self.get_channel_name(interaction.channel)
+                forced_format = self.config.get_forced_format(channel_name, server_id)
+                deck_collection_manager = DeckCollectionManager(forced_format, server_id)
+                decks = deck_collection_manager.get_all_decks()
+                if len(decks)>0:
+                    deck_analysis_manager = DeckAnalysisManager(server_id)
+                    results = deck_analysis_manager.analyze_decks(decks)
+                    piechart = deck_analysis_manager.create_pie_chart(results)
+                    file = File(filename="piechart.jpg", fp=piechart)
+                    await interaction.followup.send(file = file)
+                else:
+                    await interaction.followup.send("No decks have been submitted yet")
+            else:
+                await interaction.response.send_message(result.get_message())
     
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_CREATE, description="Creates a new tournament. This deletes any previous tournaments and decklists!")
         async def create_tournament(interaction: Interaction, tournament_name: str, format_name: str, tournament_type: str):

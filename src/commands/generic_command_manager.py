@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 
-from discord import Interaction
+import datetime
 
 import discord
+from discord import Interaction
 
 from src.config.server_config import ServerConfig
 from src.config.config import Config
@@ -12,7 +13,7 @@ from src.credentials_manager import CredentialsManager
 from src.deck.deck_images import DeckAsImageGenerator
 from src.image_uploader import Uploader
 
-from src.utils.utils import OperationResult, ReallyBigYugiohBot
+from src.utils.utils import OperationResult
 
 import src.strings as Strings
 
@@ -24,7 +25,7 @@ OTHER_KEY = "other"
 
 class GenericCommandManager(ABC):
     
-    def __init__(self, bot:ReallyBigYugiohBot, card_collection:CardCollection):
+    def __init__(self, bot, card_collection:CardCollection):
         self.server_config = ServerConfig()
         self.bot = bot
         self.card_collection = card_collection
@@ -50,12 +51,15 @@ class GenericCommandManager(ABC):
         author = interaction.user.name
         screen_name = interaction.user.display_name
         server_id = interaction.guild_id
+        channel_name = interaction.channel
         authorized = self.can_command_execute(interaction, False).success
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         if authorized:
             # Print basic command information
-            print(f"\nUser @{author} (@{screen_name}) called /{command_name} on server \"{guild}\" ({server_id}, server authorized)")
+            print(f"\n[{timestamp}]: User @{author} (@{screen_name}) called /{command_name} on server \"{guild}\" ({server_id}/{channel_name}, server authorized)")
         else:
-            print(f"\nUser @{author} (@{screen_name}) called /{command_name} on server \"{guild}\" ({server_id}, server unauthorized)")
+            print(f"\n[{timestamp}]: User @{author} (@{screen_name}) called /{command_name} on server \"{guild}\" ({server_id}/{channel_name}, server unauthorized)")
         
         # Print positional arguments
         if args:

@@ -152,6 +152,9 @@ class DeckCollectionManager:
 	def get_registered_players(self):
 		return self.deck_collection.get_registered_players()
 
+	def get_all_decks(self) -> List[str]:
+		return [deck.deck_file_name for deck in self.deck_collection.decks]
+
 	def clear_decks(self):
 		return self.deck_collection.clear_decks()
 

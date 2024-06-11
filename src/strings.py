@@ -173,6 +173,7 @@ COMMAND_NAME_TOURNAMENT_IMG_DECK = "img_deck" # Done
 COMMAND_NAME_TOURNAMENT_CONFIRM_DECK = "confirm_deck" # Done
 COMMAND_NAME_TOURNAMENT_CLEANUP_CHALLONGE = "t_challonge_cleanup" # Done
 COMMAND_NAME_SHARE_DECK_DB = "share_deck_image_db" #Done
+COMMAND_NAME_ANALYZE_TOURNAMENT_DECKS = "t_meta_analysis" #Done
 
 COMMAND_NAME_SHARE_DECK_DB = "share_deck_db" #Done
 COMMAND_NAME_SHARE_DECK_YDK = "share_deck" #Done

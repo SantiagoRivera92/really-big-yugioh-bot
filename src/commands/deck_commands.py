@@ -32,7 +32,7 @@ class DeckCommandManager(GenericCommandManager):
         for card in readable_decklist.main:
             card_name = self.card_collection.get_card_name_from_id(card.card_id)
             readable = f"{readable}{card.copies}x {card_name}\n"
-            readable = f"{readable}\nExtra Deck:\n\n"
+        readable = f"{readable}\nExtra Deck:\n\n"
         for card in readable_decklist.extra:
             card_name = self.card_collection.get_card_name_from_id(card.card_id)
             readable = f"{readable}{card.copies}x {card_name}\n"
@@ -42,7 +42,9 @@ class DeckCommandManager(GenericCommandManager):
             readable = f"{readable}{card.copies}x {card_name}\n"
         return readable
 
+
     def add_commands(self):
+        
         @self.bot.tree.command(name=Strings.COMMAND_NAME_DECK_VALIDATE, description="Validates a deck")
         async def validate_deck(interaction: Interaction, ydk: Attachment):
             self.identify_command(interaction, Strings.COMMAND_NAME_DECK_VALIDATE)
@@ -72,7 +74,6 @@ class DeckCommandManager(GenericCommandManager):
                     await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
             else:
                 await interaction.response.send_message(result.get_message())
-
 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_TOURNAMENT_YDK_DECK, description="Gets a decklist as a YDK file")
         async def get_ydk_decklist(interaction: Interaction, player_name: str):
@@ -221,11 +222,12 @@ class DeckCommandManager(GenericCommandManager):
                 if ydk.filename.endswith(".ydk"):
                     ydk_as_string = await ydk.read()
                     ydk_as_string = ydk_as_string.decode("utf-8")
+                    decklist = Ydk(ydk_as_string).get_deck()
                     filename = ydk.filename.replace("_", " ")[:-4]
                     channel_name = self.get_channel_name(interaction.channel)
                     forced_format = self.config.get_forced_format(channel_name, server_id)
                     banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
-                    image = self.deck_images.build_image_with_format(ydk.get_deck(), "temp", filename, forced_format, banlist_file)
+                    image = self.deck_images.build_image_with_format(decklist, "temp", filename, forced_format, banlist_file)
                     with open("img/decks/temp.ydk", 'w', encoding="utf-8") as file:
                         deck_as_lines = ydk_as_string.split("\n")
                         for line in deck_as_lines:

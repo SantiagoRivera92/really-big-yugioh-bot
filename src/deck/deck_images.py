@@ -111,15 +111,15 @@ def draw_extra_side_deck(deck_images, deck_type, main_deck_width, banlist, card_
     
 def draw_text(text, font_size):
     font = ImageFont.truetype(FONT_FILE, font_size)
-    text_width, text_height = font.getsize(text)
+    text_width = font.getlength(text)
     text_box_width = text_width + 8
-    text_box_height = text_height * 1.25
+    text_box_height = font_size
     text_box = Image.new("RGBA", (round(text_box_width), round(text_box_height)), (0, 0, 0, 0))
     draw = ImageDraw.Draw(text_box)
 
     # Calculate text position
     text_x = 8
-    text_y = text_height // 4
+    text_y = 0
 
     # Draw text
     draw.text((text_x, text_y), text, fill=(255, 255, 255), font=font)
@@ -131,13 +131,11 @@ def draw_text_boxes(deck_name, deck_format):
     deck_format_text = "Format:"
     
     deck_name_value_text = draw_text(deck_name, FONT_SIZE_LARGE)
-    margin_text = draw_text(" ", FONT_SIZE_MEDIUM)
     deck_format_text = draw_text(deck_format_text, FONT_SIZE_MEDIUM)
     deck_format_value_text = draw_text(f"  {deck_format}", FONT_SIZE_LARGE)
     
-    final_image = append_images_vertically(deck_name_value_text, margin_text)
-    final_image = append_images_vertically(final_image, deck_format_text)
-    final_image = append_images_vertically(final_image, deck_format_value_text)
+    final_image = append_images_vertically(deck_name_value_text, deck_format_text, margin=64)
+    final_image = append_images_vertically(final_image, deck_format_value_text, margin=0)
     
     return final_image
 
@@ -147,10 +145,10 @@ def draw_disclaimer():
     
     draw1 = draw_text(text_1, FONT_SIZE_MEDIUM)
     draw2 = draw_text(text_2, FONT_SIZE_LARGE)
-    return append_images_vertically(draw1, draw2)
+    return append_images_vertically(draw1, draw2, margin=0)
 
 
-def append_images_vertically(image1, image2, margin=32):
+def append_images_vertically(image1, image2, margin=8):
     if image1 is None:
         if image2 is None:
             return None
@@ -210,8 +208,8 @@ class DeckAsImageGenerator:
 
         # Append images vertically
         final_image = main_deck_image
-        final_image = append_images_vertically(final_image, extra_deck_image)
-        final_image = append_images_vertically(final_image, side_deck_image)
+        final_image = append_images_vertically(final_image, extra_deck_image, margin=32)
+        final_image = append_images_vertically(final_image, side_deck_image, margin=32)
 
         # Calculate position to paste the deck image onto the background
         final_image_width, final_image_height = final_image.size
