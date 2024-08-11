@@ -1,11 +1,10 @@
 from typing import List
 
-from discord import Interaction, app_commands, Attachment, File
+from discord import Interaction, app_commands, Attachment, File, Object
 
 from src.commands.generic_command_manager import GenericCommandManager
-
 import src.banlist.banlist_utils as Banlist
-
+import src.banlist.cc_banlist_utils as CommonCharityBanlistTools
 import src.strings as Strings
 
 def banlist_to_discord_file(banlist_file: str, format_name: str):
@@ -148,25 +147,20 @@ class FormatCommandManager(GenericCommandManager):
 		async def remove_format(interaction: Interaction, format_name: str):
 			self.identify_command(interaction, Strings.COMMAND_NAME_FORMAT_REMOVE, format_name)
 			server_id = interaction.guild_id
-
 			result = self.is_valid_filename(format_name)
 			if not result.was_successful():
 				await interaction.response.send_message(result.get_message())
 				return
-
 			result = self.can_command_execute(interaction, True)
-
 			supported_formats = self.config.get_supported_formats(server_id)
 			found = False
 			for _format in supported_formats:
 				if _format.lower() == format_name.lower():
 					found = True
 					break
-
 			if not found:
 				await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMAT_FOR_NAME % format_name)
 				return
-
 			if result.was_successful():
 				await interaction.response.defer(ephemeral=True)
 				result = self.config.remove_format(format_name, server_id)
@@ -177,6 +171,34 @@ class FormatCommandManager(GenericCommandManager):
 			else:
 				await interaction.response.send_message(result.get_message())
     
+
+		@self.bot.tree.command(
+			name=Strings.COMMAND_UPDATE_COMMON_CHARITY_BANLIST, 
+			description="Update and download the Common Charity banlist",
+			guild=Object(id=924120946095312917)
+        )
+		async def update_cc_banlist(interaction:Interaction):
+			self.identify_command(interaction, Strings.COMMAND_UPDATE_COMMON_CHARITY_BANLIST)
+			server_id = interaction.guild_id
+			result = self.can_command_execute(interaction, False)
+			if not result.was_successful():
+				await interaction.response.send_message(result.get_message(), ephemeral=True)
+				return
+			forced_format = "Common Charity"
+			await interaction.response.defer(ephemeral=True)
+
+			file_content = CommonCharityBanlistTools.generate_banlist()
+			result = Banlist.validate_banlist(file_content)
+			if not result.was_successful():
+				await interaction.followup.send(result.get_message(), ephemeral=True)
+				return
+
+			result = self.config.edit_supported_format(forced_format, file_content, server_id)
+			if result.was_successful():
+				banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+				await interaction.followup.send(file=banlist_to_discord_file(banlist_file, forced_format))
+			else:
+				await interaction.followup.send(result.get_message())
 
 		@self.bot.tree.command(name=Strings.COMMAND_NAME_FORMAT_BANLIST, description="Get an EDOPRO banlist")
 		async def get_banlist(interaction: Interaction):
@@ -211,6 +233,6 @@ class FormatCommandManager(GenericCommandManager):
 			for _format in formats:
 				if current.lower() in _format.lower():
 					if len(choices) < 25:
-						choice = app_commands.Choice(name=_format, value=format)
+						choice = app_commands.Choice(name=_format, value=_format)
 						choices.append(choice)
 			return choices

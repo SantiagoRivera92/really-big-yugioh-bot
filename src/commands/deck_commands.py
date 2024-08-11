@@ -8,6 +8,7 @@ from src.commands.generic_command_manager import GenericCommandManager
 from src.deck.deck_validation import Deck, Ydk
 from src.deck.deck_collection import DeckCollectionManager
 from src.duelingbook.duelingbook import DuelingbookManager
+from src.ygoprodeck.ygoprodeck import YgoprodeckManager
 
 import src.strings as Strings
 
@@ -248,6 +249,40 @@ class DeckCommandManager(GenericCommandManager):
                     await interaction.followup.send(Strings.ERROR_MESSAGE_WRONG_DECK_FORMAT)
             else:
                 await interaction.response.send_message(result.get_message())
+                
+        @self.bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_YGOPRODECK, description="Shares an image of a YGOPRODECK deck")
+        async def share_ydk_ygoprodeck(interaction:Interaction, ygoprodeck_url:str):
+            self.identify_command(interaction, Strings.COMMAND_NAME_SHARE_DECK_YGOPRODECK, ygoprodeck_url)
+            server_id = interaction.guild_id
+            result = self.can_command_execute(interaction, False)
+            if result.was_successful():
+                formats = self.config.get_supported_formats(server_id)
+                if len(formats) == 0:
+                    await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
+                    return
+                await interaction.response.defer(ephemeral=False)
+                
+                manager = YgoprodeckManager()
+                deck = manager.extract_deck(ygoprodeck_url)
+                if deck is not None:
+                    deck_name = deck.name
+                    channel_name = self.get_channel_name(interaction.channel)
+                    forced_format = self.config.get_forced_format(channel_name, server_id)
+                    banlist_file = self.config.get_banlist_for_format(forced_format, server_id)
+                    image = self.deck_images.build_image_with_format(deck, "temp", deck_name, forced_format, banlist_file)
+                    image_url = self.uploader.upload_image(image)
+                    embed = Embed(title=deck_name)
+                    embed.set_image(url="attachment://deck.jpg")
+                    embed.add_field(name="", value=f"[See high resolution decklist]({image_url})", inline=False)
+                    embed.add_field(name="", value=f"[See deck in YGOPRODECK]({ygoprodeck_url})", inline=False)
+
+                    with open(image, "rb") as fp:
+                        image_file = File(fp, filename="deck.jpg")
+
+                    await interaction.followup.send(embed=embed, file=image_file)
+                    
+                else:
+                    await interaction.followup.send(Strings.ERROR_YGOPRODECK_DECKLIST_URL_INVALID)
                 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_DB, description="Shares an image of a Duelingbook deck")
         async def share_ydk_db(interaction: Interaction, db_url:str):

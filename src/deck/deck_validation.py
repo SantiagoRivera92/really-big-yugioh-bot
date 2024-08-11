@@ -25,10 +25,11 @@ class Card:
 		self.copies+=1
 
 class Deck:
-	def __init__(self, main:List[Card], extra:List[Card], side:List[Card]):
+	def __init__(self, main:List[Card], extra:List[Card], side:List[Card], name:str=""):
 		self.main = main
 		self.extra = extra
 		self.side = side
+		self.name = name
 
 	def get_main_deck(self):
 		return self.main

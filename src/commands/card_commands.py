@@ -29,7 +29,10 @@ class CardCommandManager(GenericCommandManager):
                 await interaction.followup.send(Strings.ERROR_MESSAGE_NO_FORMATS_ENABLED)
                 return
             forced_format = self.config.get_forced_format(channel_name, server_id)
-            card = self.card_collection.get_card_from_card_name(cardname)
+            if "Edison" in forced_format:
+                card = self.card_collection.get_card_from_card_name_edison(cardname)
+            else:
+                card = self.card_collection.get_card_from_card_name(cardname)
             if card is None:
                 await interaction.followup.send(Strings.ERROR_MESSAGE_NO_CARDS_WITH_NAME % cardname)
             else:
@@ -64,7 +67,10 @@ class CardCommandManager(GenericCommandManager):
             if forced_format is None:
                 await interaction.response.send_message(Strings.ERROR_MESSAGE_NO_FORMAT_TIED, ephemeral=True)
                 return
-            card = self.card_collection.get_card_from_card_name(cardname)
+            if "Edison" in forced_format:
+                card = self.card_collection.get_card_from_card_name_edison(cardname)
+            else:
+                card = self.card_collection.get_card_from_card_name(cardname)
             if card is None:
                 await interaction.response.send_message(Strings.ERROR_MESSAGE_ABSOLUTE_SEARCH_FAILED % cardname, ephemeral=True)
                 return

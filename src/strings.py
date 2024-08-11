@@ -62,6 +62,10 @@ MESSAGE_MATCHMAKING_MATCH_STARTED = "A %s ranked match has started between <@%d>
 MESSAGE_MATCHMAKING_MATCH_CANCELLED = "The match between <@%d> and <@%d> has been cancelled by <@%d>'s request."
 MESSAGE_MATCHMAKING_WON_ELO_UPDATED = "<@%d> (%.2f => %.2f) won their match against <@%d> (%.2f => %.2f)!"
 
+# YGOPRODECK
+
+ERROR_YGOPRODECK_DECKLIST_URL_INVALID = "Error downloading from YGOPRODECK. Double check you're sending a valid YGOPRODECK list."
+
 # Server Config
 
 ERROR_PAY_ME_MONEY = "This server is not enabled.\n\nTo enable this server you have to be a member in https://patreon.com/DiamondDudeYGO \n\nOnce you've done that, contact @DiamondDudeYGO#5198 with this server ID: %d."
@@ -140,6 +144,9 @@ COMMAND_NAME_FORMAT_UPDATE = "update_format" # Done
 COMMAND_NAME_FORMAT_REMOVE = "remove_format" # Done
 COMMAND_NAME_FORMAT_CHANGE_CARD_STATUS = "change_card_status" # Done
 
+# Common Charity server-exclusive commands
+COMMAND_UPDATE_COMMON_CHARITY_BANLIST = "cc_banlist" # Done
+
 # Deck-related commands
 COMMAND_NAME_DECK_VALIDATE = "validate" # Done
 
@@ -177,6 +184,7 @@ COMMAND_NAME_ANALYZE_TOURNAMENT_DECKS = "t_meta_analysis" #Done
 
 COMMAND_NAME_SHARE_DECK_DB = "share_deck_db" #Done
 COMMAND_NAME_SHARE_DECK_YDK = "share_deck" #Done
+COMMAND_NAME_SHARE_DECK_YGOPRODECK = "share_deck_ygoprodeck" #Done
 COMMAND_NAME_SHARE_DECK_YDK_TXT = "share_deck_txt" # Done
 
 COMMAND_NAME_SET_DB_NAME = "set_db_name" # Done

@@ -3,7 +3,7 @@ from typing import List
 import asyncio
 
 import discord
-from discord import app_commands
+from discord import app_commands, Object
 from src.command_manager import CommandManager
 from src.card.card_collection import CardCollection
 from src.league.matchmaking import MatchmakingManager
@@ -24,7 +24,7 @@ class ReallyBigYugiohBot(discord.Client):
 		self.loop.create_task(decay_scores())
 		card_collection = CardCollection()
 		CommandManager(self, card_collection)
-		new_commands = await self.tree.sync()
+		await self.tree.sync()
 
 async def decay_scores():
 	global decay
