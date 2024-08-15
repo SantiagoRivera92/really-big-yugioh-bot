@@ -11,7 +11,7 @@ from src.deck.deck_validation import Ydk
 from src.deck.deck_collection import DeckCollectionManager
 from src.user_manager import UserManager
 from src.league.matchmaking import MatchmakingManager
-from src.duelingbook.duelingbook import DuelingbookManager
+from src.deck.provider.duelingbook import DuelingbookManager
 from src.deck.deck_analysis import DeckAnalysisManager
 
 import src.strings as Strings

@@ -7,8 +7,8 @@ from discord import Interaction, Attachment, File, Embed, app_commands
 from src.commands.generic_command_manager import GenericCommandManager
 from src.deck.deck_validation import Deck, Ydk
 from src.deck.deck_collection import DeckCollectionManager
-from src.duelingbook.duelingbook import DuelingbookManager
-from src.ygoprodeck.ygoprodeck import YgoprodeckManager
+from src.deck.provider.duelingbook import DuelingbookManager
+from src.deck.provider.ygoprodeck import YgoprodeckManager
 from src.utils.utils import OperationResult
 
 import src.strings as Strings
