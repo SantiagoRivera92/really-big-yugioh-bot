@@ -1,6 +1,6 @@
 import os
 
-from typing import List
+from typing import List, Union
 
 from discord import Interaction, Attachment, File, Embed, app_commands
 
@@ -9,6 +9,7 @@ from src.deck.deck_validation import Deck, Ydk
 from src.deck.deck_collection import DeckCollectionManager
 from src.duelingbook.duelingbook import DuelingbookManager
 from src.ygoprodeck.ygoprodeck import YgoprodeckManager
+from src.utils.utils import OperationResult
 
 import src.strings as Strings
 
@@ -263,8 +264,9 @@ class DeckCommandManager(GenericCommandManager):
                 await interaction.response.defer(ephemeral=False)
                 
                 manager = YgoprodeckManager()
-                deck = manager.extract_deck(ygoprodeck_url)
-                if deck is not None:
+                deck: Union[Deck, OperationResult] = manager.extract_deck(ygoprodeck_url)
+                
+                if isinstance(deck, Deck):
                     deck_name = deck.name
                     channel_name = self.get_channel_name(interaction.channel)
                     forced_format = self.config.get_forced_format(channel_name, server_id)
@@ -280,9 +282,13 @@ class DeckCommandManager(GenericCommandManager):
                         image_file = File(fp, filename="deck.jpg")
 
                     await interaction.followup.send(embed=embed, file=image_file)
-                    
+                
+                elif isinstance(deck, OperationResult):
+                    await interaction.followup.send(deck.get_message())
                 else:
                     await interaction.followup.send(Strings.ERROR_YGOPRODECK_DECKLIST_URL_INVALID)
+                
+                    
                 
         @self.bot.tree.command(name=Strings.COMMAND_NAME_SHARE_DECK_DB, description="Shares an image of a Duelingbook deck")
         async def share_ydk_db(interaction: Interaction, db_url:str):

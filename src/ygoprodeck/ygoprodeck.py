@@ -1,13 +1,15 @@
-import requests
 import re
-from typing import List, Optional
+import json
+from typing import List, Optional, Union
+import requests
 from src.deck.deck_validation import Card, Deck
+from src.utils.utils import OperationResult
 
 class YgoprodeckManager:
-    def extract_deck(self, url: str) -> Optional[Deck]:
+    def extract_deck(self, url: str) -> Optional[Union[Deck | OperationResult]]:
         # Check if the URL contains the necessary substring
         if "ygoprodeck.com/deck/" not in url:
-            return None
+            return OperationResult(False, f"{url} is not a YGOPRODECK deck URL.")
 
         # Download the HTML content
         response = requests.get(url)
@@ -19,20 +21,28 @@ class YgoprodeckManager:
         side_deck_match = re.search(r"var sidedeckjs = '(\[.*?\])';", html_content)
         deck_name_match = re.search(r"var deckname = \"(.*?)\";", html_content)
 
-        # If any part is missing, return None
-        if not all([main_deck_match, extra_deck_match, side_deck_match, deck_name_match]):
-            return None
+        if not main_deck_match:
+            return OperationResult(False, "Provided URL was a YGOPRODECK deck URL but it did not contain a Main Deck")
 
-        # Extracted strings from the HTML
         main_deck_str = main_deck_match.group(1)
-        extra_deck_str = extra_deck_match.group(1)
-        side_deck_str = side_deck_match.group(1)
-        deck_name = deck_name_match.group(1)
-
-        # Convert strings to lists of card IDs
-        main_deck_ids = eval(main_deck_str)
-        extra_deck_ids = eval(extra_deck_str)
-        side_deck_ids = eval(side_deck_str)
+        main_deck_ids = json.loads(main_deck_str)
+        
+        if extra_deck_match:
+            extra_deck_str = extra_deck_match.group(1)
+            extra_deck_ids = json.loads(extra_deck_str)
+        else:
+            extra_deck_ids = []
+            
+        if side_deck_match:
+            side_deck_str = side_deck_match.group(1)
+            side_deck_ids = json.loads(side_deck_str)
+        else:
+            side_deck_ids = []
+            
+        if deck_name_match:
+            deck_name = deck_name_match.group(1)
+        else:
+            deck_name = ""
 
         # Helper function to convert list of ids to list of Card objects
         def convert_to_cards(card_ids: List[str]) -> List[Card]:
