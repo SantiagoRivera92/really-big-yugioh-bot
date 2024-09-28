@@ -200,16 +200,14 @@ class DeckValidator:
 			card_name = self.card_collection.get_card_name_from_id(card.card_id)
 			found = False
 			for line in banlist_as_lines:
-				if card.card_id in line:
-					# This is just a way of finding how many copies are legal of a given card. Not pretty but it works.
+				if line.startswith(f"{card.card_id} "):
 					id_count = len(card.card_id)
 					limit_as_string = line[id_count+1 : id_count+2]
 					if limit_as_string == "-":
 						limit_as_string = "-1"
+					print(f"{card.copies}x {card_name}")
 					limit = int(limit_as_string)
-					
-					# Now we check whether the max number is less than 1 (which means illegal or forbidden) 
-					# or whether there's more copies of a card than the legal limit (4 copies of anything, 3 of a semi-limited, etc)
+    
 					if limit < 1 or card.copies > limit:
 						if card_name is None:
 							error_messages.append(Strings.ERROR_YDK_NON_EXISTING_ID % card.card_id)
