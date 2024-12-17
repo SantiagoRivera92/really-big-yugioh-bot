@@ -162,6 +162,12 @@ COMMAND_NAME_LEAGUE_LOST = "l_lost" # Done
 COMMAND_NAME_LEAGUE_FORCE_LOSS = "force_loss" # Done
 COMMAND_NAME_LEAGUE_SET_DEFAULT_OUTPUT_CHANNEL = "set_league_channel" # Done
 
+# Cube Draft commands
+COMMAND_INIT_DRAFT = "cube_init"
+COMMAND_JOIN_DRAFT = "cube_join"
+COMMAND_DROP_DRAFT = "cube_drop"
+COMMAND_END_DRAFT = "cube_end_draft"
+
 # Tournament-related commands
 COMMAND_NAME_TOURNAMENT_CREATE = "t_create" # Done
 COMMAND_NAME_TOURNAMENT_INFO = "t_info" # Done

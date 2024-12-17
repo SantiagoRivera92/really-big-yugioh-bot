@@ -262,6 +262,7 @@ class TournamentManager:
 		return tournament.get_format()
 		
 	def get_matches(self):
+		self.update_challonge_id_for_all_players()
 		tournament = get_tournament_for_server(self.server_id)
 		if tournament is None:
 			return None
@@ -407,6 +408,7 @@ class TournamentManager:
 
 	def start_tournament(self):
 		tournament = get_tournament_for_server(self.server_id)
+		self.update_challonge_id_for_all_players()
 		if tournament is None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
 		if tournament.is_open():
@@ -459,7 +461,7 @@ class TournamentManager:
 		tournament = self.get_tournament_for_server()
 		if tournament is None:
 			return OperationResult(False, Strings.ERROR_MESSAGE_NO_ACTIVE_TOURNAMENT)
-		if not tournament.is_open():
+		if tournament.is_open():
 			return OperationResult(False, Strings.ERROR_MESSAGE_TOURNAMENT_HAS_NOT_STARTED)
 		matches = self.get_active_matches()
 		if len(matches) == 0:

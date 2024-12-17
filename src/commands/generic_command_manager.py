@@ -47,7 +47,7 @@ class GenericCommandManager(ABC):
         return channel.name
     
     def identify_command(self, interaction: Interaction, command_name: str, *args):
-        guild = interaction.guild.name
+        guild = interaction.guild
         author = interaction.user.name
         screen_name = interaction.user.display_name
         server_id = interaction.guild_id
@@ -83,7 +83,7 @@ class GenericCommandManager(ABC):
         if not enabled:
             return OperationResult(False, Strings.ERROR_MESSAGE_BOT_DISABLED_IN_CHANNEL)
         if admin_only:
-            is_admin = interaction.user.guild_permissions.administrator
+            is_admin = interaction.user.resolved_permissions.administrator
             if not is_admin:
                 # God-like powers
                 if interaction.user.id == 164008587171987467:
@@ -96,7 +96,7 @@ class GenericCommandManager(ABC):
     def is_valid_filename(self, filename: str):
         if len(filename) == 0:
             return OperationResult(False, Strings.ERROR_FORMAT_NAME_EMPTY)
-        invalid_characters = "#%&\{\}\\<>*?/$!\'\":@+`|="
+        invalid_characters = "#%&{}\\<>*?/$!\'\":@+`|="
         for char in invalid_characters:
             if char in filename:
                 return OperationResult(False, Strings.ERROR_FORMAT_NAME_INVALID_CHARACTER % char)

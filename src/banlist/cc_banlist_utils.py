@@ -146,25 +146,28 @@ class Alias:
 				return lst
 		return [n]
 
-URL_COMMON_BANLISTS = "https://api.ygoprog.com/api/banlist/common"
-URL_BANLIST = "https://api.ygoprog.com/api/banlist/public/%s"
+
+URL_LATEST_BANLIST = "https://raw.githubusercontent.com/SantiagoRivera92/TimeWizard/refs/heads/main/latest.json"
+
 URL_CARDS = "https://api.ygoprog.com/api/cards"
+
+
 LABEL_BANLIST = "Tcg"
 force_legal = []
 force_unlimited = []
 
 def generate_banlist() -> str:
-    request = requests.Request(URL_COMMON_BANLISTS, None, header)
+    request = requests.Request(URL_LATEST_BANLIST, None, header)
     with requests.urlopen(request) as response:
         banlists = json.loads(response.read().decode())
-        advanced_id = next(obj for obj in banlists if obj['format'] == LABEL_BANLIST)['_id']
+        advanced_banlist = banlists["url"]
 
-    request = requests.Request(URL_BANLIST % advanced_id, None, header)
+    request = requests.Request(advanced_banlist, None, header)
     with requests.urlopen(request) as response:
         data = json.loads(response.read().decode())
         forbidden = data['forbidden']
         limited = data['limited']
-        semi = data['semi_limited']
+        semi = data['semilimited']
 
     request = requests.Request(URL_CARDS, None, header)
     with requests.urlopen(request) as response:

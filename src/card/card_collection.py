@@ -106,6 +106,16 @@ class CardCollection:
             for variant in card.get(KEY_CARD_IMAGES):
                 if card_id_as_int == variant.get(KEY_ID):
                     return card.get(KEY_NAME)
+                
+    def get_card_from_id(self, card_id):
+        self.refresh_cards()
+        card_id_as_int = int(card_id)
+        for card in self.cards:
+            if card_id_as_int == card.get(KEY_ID):
+                return card
+            for variant in card.get(KEY_CARD_IMAGES):
+                if card_id_as_int == variant.get(KEY_ID):
+                    return card
 
     def get_card_image_from_id(self, card_id):
         self.refresh_cards()

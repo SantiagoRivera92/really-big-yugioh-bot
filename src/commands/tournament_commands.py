@@ -2,7 +2,8 @@ import os
 
 from typing import List
 
-from discord import Interaction, Attachment, app_commands, File, Embed
+from discord import Interaction, Attachment, app_commands, File, Embed, SelectOption
+from discord.ui import Select, View
 
 from src.commands.generic_command_manager import GenericCommandManager
 from src.tournament.tournaments import TournamentManager
@@ -13,6 +14,9 @@ from src.user_manager import UserManager
 from src.league.matchmaking import MatchmakingManager
 from src.deck.provider.duelingbook import DuelingbookManager
 from src.deck.deck_analysis import DeckAnalysisManager
+from src.drafting.draft_manager import DraftManager
+from src.views.draft_pick_view import DraftPickView
+from src.drafting.draft_images import DraftPoolAsImageGenerator
 
 import src.strings as Strings
 class TournamentCommandManager(GenericCommandManager):
@@ -22,6 +26,107 @@ class TournamentCommandManager(GenericCommandManager):
         return TournamentManager(self.credentials, server_id)
         
     def add_commands(self):
+        
+        @self.bot.tree.command(name=Strings.COMMAND_INIT_DRAFT, description="Starts a cube draft. Admin only.")
+        async def init_draft(interaction: Interaction, cube_id: str, max_players:str, pack_size:str, pack_amount:str):
+            self.identify_command(interaction, Strings.COMMAND_INIT_DRAFT, cube_id, max_players, pack_size, pack_amount)
+            result = self.can_command_execute(interaction, True)
+            
+            if not result.was_successful():
+                await interaction.response.send_message(result.get_message(), ephemeral=True)
+                return
+            
+            manager = DraftManager(server_id = interaction.guild_id)
+            result = manager.init_cube_draft(cube_id, max_players, pack_size, pack_amount)
+            await interaction.response.send_message(result.get_message(), ephemeral=True)
+        
+        @self.bot.tree.command(name=Strings.COMMAND_JOIN_DRAFT, description="Joins a cube draft.")
+        async def join_draft(interaction:Interaction):
+            self.identify_command(interaction, Strings.COMMAND_JOIN_DRAFT)
+            result = self.can_command_execute(interaction, False)
+            if not result.was_successful():
+                await interaction.response.send_message(result.get_message(), ephemeral=True)
+                return
+            manager = DraftManager(server_id = interaction.guild_id)
+            started = manager.load_draft_data()["started"]
+            result = manager.join_cube_draft(interaction.user.name, interaction.user.id)
+            await interaction.response.send_message(result.get_message(), ephemeral=True)
+
+            async def on_card_picked():
+                # Show the current draft pool
+                manager = DraftManager(server_id = interaction.guild_id)
+                player = manager.get_player_by_id(interaction.user.id)
+                pool = player["picked_cards"]
+                user = await self.bot.fetch_user(player["id"])
+                generator = DraftPoolAsImageGenerator(self.card_collection, interaction.guild_id)
+                if len(pool) > 0:
+                    pool_file = generator.build_pool_image(pool, player["name"])
+                    embed = Embed(title="Current draft pool", description="These are the cards you've picked so far.")
+                    embed.set_image(url="attachment://pool.jpg")
+                    with open(pool_file, "rb") as fp:
+                        image_file = File(fp, filename="pool.jpg")
+                    await user.send(embed=embed, file=image_file) 
+
+            async def callback():
+                # Show the new pack
+                manager = DraftManager(server_id = interaction.guild_id)
+                data = manager.load_draft_data()
+                for player in data["players_data"]:
+                    user = await self.bot.fetch_user(player["id"])
+                    pack = player["current_pack"]["pack"]
+                    cards = []
+                    for card in pack:
+                        card = self.card_collection.get_card_from_id(card)
+                        cards.append(card)
+                    options = []
+                    for card in cards:
+                        options.append(SelectOption(label=card["name"], value=card["id"]))
+                    generator = DraftPoolAsImageGenerator(self.card_collection, interaction.guild_id)
+                    
+                    view = DraftPickView(player["id"], cards, interaction.guild_id, callback, on_card_picked)
+                    pack_file = generator.build_pool_image(pack, f"{player["name"]} pack")
+                    embed = Embed(title="Current pick", description="These are the cards in your current pack.")
+                    embed.set_image(url="attachment://pack.jpg")
+                    with open(pack_file, "rb") as fp:
+                        image_file = File(fp, filename="pack.jpg")
+                    await user.send(embed=embed, view=view, file=image_file)
+
+            data = manager.load_draft_data()
+            if data["started"] and not started:
+                await callback()
+            
+        @self.bot.tree.command(name=Strings.COMMAND_DROP_DRAFT, description="Drops from a cube draft (before the draft starts).")
+        async def drop_draft(interaction:Interaction):
+            self.identify_command(interaction, Strings.COMMAND_DROP_DRAFT)
+            result = self.can_command_execute(interaction, False)
+            if not result.was_successful():
+                await interaction.response.send_message(result.get_message(), ephemeral=True)
+                return
+            manager = DraftManager(server_id = interaction.guild_id)
+            result = manager.drop_cube_draft(interaction.user.id)
+            await interaction.response.send_message(result.get_message(), ephemeral=True)
+        
+        @self.bot.tree.command(name=Strings.COMMAND_END_DRAFT, description="Ends a cube draft. Admin only.")
+        async def end_draft(interaction:Interaction):
+            self.identify_command(interaction, Strings.COMMAND_END_DRAFT)
+            result = self.can_command_execute(interaction, True)
+            if not result.was_successful():
+                await interaction.response.send_message(result.get_message(), ephemeral=True)
+                return
+            manager = DraftManager(server_id=interaction.guild_id)
+            manager.kill_draft()
+            await interaction.response.send_message("Draft ended. You can start a new draft now.", ephemeral=True)
+            
+        @self.bot.tree.command(name="restart_draft", description="Ends a cube draft. Admin only.")
+        async def restart_draft(interaction:Interaction):
+            self.identify_command(interaction, "restart_draft")
+            result = self.can_command_execute(interaction, True)
+            if not result.was_successful():
+                await interaction.response.send_message(result.get_message(), ephemeral=True)
+                return
+            manager = DraftManager(server_id=interaction.guild_id)
+            manager.start_cube_draft()
+            await interaction.response.send_message("Draft restarted.", ephemeral=True)
         
         @self.bot.tree.command(name=Strings.COMMAND_NAME_ANALYZE_TOURNAMENT_DECKS, description="Builds a meta analysis of a torunament")
         async def analyze_tournament_decks(interaction:Interaction):

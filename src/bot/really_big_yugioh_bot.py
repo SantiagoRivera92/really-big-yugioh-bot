@@ -22,9 +22,6 @@ class ReallyBigYugiohBot(discord.Client):
 
 	async def setup_hook(self):
 		self.loop.create_task(decay_scores())
-		card_collection = CardCollection()
-		CommandManager(self, card_collection)
-		await self.tree.sync()
 
 async def decay_scores():
 	global decay
